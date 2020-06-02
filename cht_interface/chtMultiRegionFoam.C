@@ -96,8 +96,8 @@ int main(int argc, char *argv[])
 
     if(Pstream::master())
     {
-        ofstream volfile;
-        ofstream centfile;
+        std::ofstream volfile;
+        std::ofstream centfile;
 
         string volfile_name;
         string centfile_name;
@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
 
     if(Pstream::master())
     {
-        ofstream tfile;
-        ofstream rhofile;
+        std::ofstream tfile;
+        std::ofstream rhofile;
 
         string tfile_name;
         string rhofile_name;
