@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
                          << fluidRegions[i].C()[cellI].component(0) << ", "
                          << fluidRegions[i].C()[cellI].component(1) << ", "
                          << fluidRegions[i].C()[cellI].component(2) << "\n";
+                QFluid[i].ref()[cellI]=100000;
             }
 
             volfile.close();
@@ -135,6 +136,8 @@ int main(int argc, char *argv[])
                          << solidRegions[i].C()[cellI].component(0) << ", "
                          << solidRegions[i].C()[cellI].component(1) << ", "
                          << solidRegions[i].C()[cellI].component(2) << "\n";
+                Qsolid[i].ref()[cellI]=100000;
+
             }
 
             volfile.close();
@@ -187,17 +190,21 @@ int main(int argc, char *argv[])
     {
         std::ofstream tfile;
         std::ofstream rhofile;
+        std::ofstream qfile;
 
         string tfile_name;
         string rhofile_name;
+        string qfile_name;
 
         forAll(fluidRegions, i)
         {
             tfile_name="cellTemperature"+fluidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
             rhofile_name="cellDensity"+fluidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
+            qfile_name="cellHeatGen"+fluidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
 
             tfile.open(tfile_name);
             rhofile.open(rhofile_name);
+            qfile.open(qfile_name);
 
             for (cellI=0; cellI<fluidRegions[i].nCells(); cellI++)
             {
@@ -205,18 +212,23 @@ int main(int argc, char *argv[])
                         << thermoFluid[i].T()[cellI] << "\n";
                 rhofile << "Cell density "     << cellI << " is "
                         << thermoFluid[i].rho()[cellI]        << "\n";
+                qfile   << "Cell temperature " << cellI << " is "
+                        << QFluid[i]()[cellI] << "\n";
             }
 
             tfile.close();
             rhofile.close();
+            qfile.close();
         }
         forAll(solidRegions, i)
         {
             tfile_name="cellTemperature"+solidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
             rhofile_name="cellTemperature"+solidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
+            qfile_name="cellHeatGen"+solidNames[i]+std::to_string(Pstream::myProcNo())+".txt";
 
             tfile.open(tfile_name);
             rhofile.open(rhofile_name);
+            qfile.open(qfile_name);
 
             for (cellI=0; cellI<solidRegions[i].nCells(); cellI++)
             {
@@ -224,10 +236,13 @@ int main(int argc, char *argv[])
                         << thermos[i].T()[cellI] << "\n";
                 rhofile   << "Cell density " << cellI << " is "
                         << thermos[i].rho()[cellI] << "\n";
+                qfile   << "Cell temperature " << cellI << " is "
+                        << Qsolid[i]()[cellI] << "\n";
             }
 
             tfile.close();
             rhofile.close();
+            qfile.close();
         }
     }
 
