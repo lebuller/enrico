@@ -1,5 +1,8 @@
 #include "enrico/foam_driver.h"
+<<<<<<< HEAD
 #include "enricoFoamLibrary.H"
+=======
+>>>>>>> Establishes the header and source files for the foamDriver class
 
 #include "enrico/error.h"
 #include "gsl/gsl"
