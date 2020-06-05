@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.3)
 project(enrico Fortran C CXX)
 
 option(USE_NEK  "Determines if Nek5000 will be included" ON)
+option(USE_FOAM  "Determines if OpenFOAM will be included" ON)
 
 # On BG/Q, linking requires -dynamic, not -rdynamic
 if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64")
@@ -91,6 +92,10 @@ if (USE_NEK)
     list(APPEND SOURCES src/nek_driver.cpp)
 endif()
 
+if (USE_FOAM)
+    list(APPEND SOURCES src/foam_driver.cpp)
+endif()
+
 if (SCALE_FOUND)
     list(APPEND SOURCES
         src/shift_driver.cpp
@@ -125,6 +130,11 @@ if (USE_NEK)
     target_compile_definitions(libenrico PUBLIC USE_NEK)
     list(APPEND LIBRARIES libnek5000)
 endif()
+
+#if (USE_FOAM)
+#    target_compile_defintions(libenrico PRIVATE USE_FOAM)
+#    list(APPEND LIBRARIES libchtMultiRegionFoam)
+#endif()
 
 if (SCALE_FOUND)
   target_compile_definitions(libenrico PRIVATE USE_SHIFT)
