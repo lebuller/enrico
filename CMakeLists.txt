@@ -131,10 +131,10 @@ if (USE_NEK)
     list(APPEND LIBRARIES libnek5000)
 endif()
 
-#if (USE_FOAM)
-#    target_compile_defintions(libenrico PRIVATE USE_FOAM)
+if (USE_FOAM)
+    target_compile_definitions(libenrico PRIVATE USE_FOAM)
 #    list(APPEND LIBRARIES libchtMultiRegionFoam)
-#endif()
+endif()
 
 if (SCALE_FOUND)
   target_compile_definitions(libenrico PRIVATE USE_SHIFT)

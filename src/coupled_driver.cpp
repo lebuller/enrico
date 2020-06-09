@@ -8,6 +8,10 @@
 #include "enrico/nek_driver.h"
 #endif
 
+#ifdef USE_FOAM
+#include "enrico/foam_driver.h"
+#endif
+
 #include "enrico/openmc_driver.h"
 #ifdef USE_SHIFT
 #include "enrico/shift_driver.h"
@@ -143,6 +147,12 @@ CoupledDriver::CoupledDriver(MPI_Comm comm, pugi::xml_node node)
     heat_fluids_driver_ = std::make_unique<NekDriver>(heat_comm.comm, heat_node);
 #else
     throw std::runtime_error{"nek5000 was specified as a solver, but is not enabled in this build of ENRICO"};
+#endif
+  } else if (s == "openfoam") {
+#ifdef USE_FOAM
+    heat_fluids_driver_ = std::make_unique<FoamDriver>(heat_comm.comm, heat_node);  
+#else
+    throw std::runtime_error{"OpenFOAM was specified as a solver, but is not enable in this build of ENRICO"}
 #endif
   } else if (s == "surrogate") {
     heat_fluids_driver_ =

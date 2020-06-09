@@ -6,7 +6,10 @@
 
 #include "xtensor/xadapt.hpp"
 
-
+#include <climits>
+#include <string>
+#include <unistd.h>
+#include <vector>
 
 namespace enrico {
 
@@ -89,6 +92,17 @@ std::vector<double> FoamDriver::density_local() const
 void FoamDriver::solve_step()
 {
   //! add calls to the foam module for running x timesteps
+}
+
+
+int FoamDriver::n_local_elem() const
+{
+//!  foam_get_n_local_elements()
+}
+
+std::size_t FoamDriver::n_global_elem() const
+{
+//!  foam_get_n_global_elements()
 }
 
 Position FoamDriver::centroid_at(int32_t local_elem) const
