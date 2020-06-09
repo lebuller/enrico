@@ -84,11 +84,11 @@ public:
 
   //! Get the number of local mesh elements
   //! \return Number of local mesh elements
-  int n_local_elem() const override;
+  int n_local_elem() const;
 
   //! Get the number of global mesh elements
   //! \return Number of global mesh elements
-  std::size_t n_global_elem() const override;
+  std::size_t n_global_elem() const;
 
 private:
   //! Get temperautre of local mesh elements
@@ -111,7 +111,7 @@ private:
   //! \return Volumes on local mesh elements
   std::vector<double> volume_local() const override;
 
-  int32_t nelgt_; //!< total number of mesh elements
+  int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
 };
 
