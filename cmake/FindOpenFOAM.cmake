@@ -15,12 +15,12 @@ else()
   ${CHT_DIR}/fluid/compressibleCourantNo.C)
 
   set(OPENFOAM_INCLUDE_DIRS
-  ./
-  ./fluid/
-  ./solid/
-  ./porousFluid/
-  ./porousSolid/
-  ./include/
+  ${CHT_DIR}/
+  ${CHT_DIR}/fluid/
+  ${CHT_DIR}/solid/
+  ${CHT_DIR}/porousFluid/
+  ${CHT_DIR}/porousSolid/
+  ${CHT_DIR}/include/
   $ENV{WM_PROJECT_DIR}/src/meshTools/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/sampling/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/finiteVolume/lnInclude/
