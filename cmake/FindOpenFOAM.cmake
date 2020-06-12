@@ -8,7 +8,7 @@ else()
 
   set(OPENFOAM_DEFINITIONS -m64 -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
 
-  set(CHT_DIR ${CMAKE_PROJECT_SOURCE_DIR}/cht_interface)
+  set(CHT_DIR ${CMAKE_SOURCE_DIR}/cht_interface)
 
   set(OPENFOAM_SOURCES
   ${CHT_DIR}/solid/solidRegionDiffNo.C
