@@ -7,6 +7,7 @@ else()
 
   set(OPENFOAM_LINK_DIRS $ENV{FOAM_LIBBIN})
 
+  message(STATUS "OpenFOAM ${OPENFOAM_LINK_DIRS}")
   # removed -m64 flag from this list
   set(OPENFOAM_DEFINITIONS -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
 
@@ -67,16 +68,19 @@ else()
   ${OPENFOAM_EXTRA_LIBS}
   )
 
+  # TO-DO : use target-specific versions of these
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --no-as-needed -Xlinker --add-needed")
+  link_directories(${OPENFOAM_LINK_DIRS})
+
   add_executable(chtMultiRegionFoam ${CHT_DIR}/chtMultiRegionFoam.C ${OPENFOAM_SOURCES})
   target_compile_definitions(chtMultiRegionFoam PUBLIC ${OPENFOAM_DEFINITIONS})
   target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBS})
+  target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
   # necessary for CMake < 3.12
   # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
-  link_directories(${OPENFOAM_LINK_DIRS})
   # set_target_properties(chtMultiRegionFoam PROPERTIES
   # LINK_DIRECTORIES           ${OPENFOAM_LINK_DIRS}
   # INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
-  target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
   # add_library(openFOAM-imported INTERFACE IMPORTED)
   # target_link_libraries(openFOAM-imported ${OPENFOAM_LIBS})
