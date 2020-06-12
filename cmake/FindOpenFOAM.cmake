@@ -21,7 +21,7 @@ else()
   ${CHT_DIR}/solid/
   ${CHT_DIR}/porousFluid/
   ${CHT_DIR}/porousSolid/
-  ${CHT_DIR}/include/`
+  ${CHT_DIR}/include/
   $ENV{WM_PROJECT_DIR}/src/meshTools/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/sampling/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/finiteVolume/lnInclude/
