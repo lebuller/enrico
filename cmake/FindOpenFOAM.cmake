@@ -66,14 +66,20 @@ else()
   )
 
   add_executable(chtMultiRegionFoam ${CHT_DIR}/chtMultiRegionFoam.C ${OPENFOAM_SOURCES})
-  target_compile_definitions(chtMultiRegionFoam ${OPENFOAM_DEFINITIONS})
+  target_compile_definitions(chtMultiRegionFoam PUBLIC ${OPENFOAM_DEFINITIONS})
   target_link_libraries(chtMultiRegionFoam ${OPENFOAM_LIBS})
-  target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
+  # necessary for CMake < 3.12
+  # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
+  set_target_properties(chtMultiRegionFoam PROPERTIES
+  INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
   target_include_directories(chtMultiRegionFoam ${OPENFOAM_INCLUDE_DIRS})
 
-  add_library(openFOAM-imported INTERFACE IMPORTED)
+  add_library(openFOAM-imported INTERFACE IMPORTED)git pu
   target_link_libraries(openFOAM-imported ${OPENFOAM_LIBS})
-  target_link_directories(openFOAM-imported ${OPENFOAM_LINK_DIRS})
+  # necessary for CMake < 3.12
+  # target_link_directories(openFOAM-imported ${OPENFOAM_LINK_DIRS})
+  set_target_properties(openFOAM-imported PROPERTIES
+  INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
   target_include_directories(openFOAM-imported ${OPENFOAM_INCLUDE_DIRS})
 
   set(OpenFOAM_FOUND True)
