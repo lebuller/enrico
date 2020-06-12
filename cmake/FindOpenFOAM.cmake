@@ -6,7 +6,8 @@ if(NOT DEFINED ENV{WM_PROJECT})
 else()
   set(OPENFOAM_LINK_DIRS $ENV{FOAM_LIBBIN})
 
-  set(OPENFOAM_DEFINITIONS -m64 -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
+  # removed -m64 flag from this list
+  set(OPENFOAM_DEFINITIONS -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
 
   set(CHT_DIR ${CMAKE_SOURCE_DIR}/cht_interface)
 
@@ -20,7 +21,7 @@ else()
   ${CHT_DIR}/solid/
   ${CHT_DIR}/porousFluid/
   ${CHT_DIR}/porousSolid/
-  ${CHT_DIR}/include/
+  ${CHT_DIR}/include/`
   $ENV{WM_PROJECT_DIR}/src/meshTools/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/sampling/lnInclude/
   $ENV{WM_PROJECT_DIR}/src/finiteVolume/lnInclude/
