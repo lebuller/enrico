@@ -72,6 +72,7 @@ else()
   # necessary for CMake < 3.12
   # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
   set_target_properties(chtMultiRegionFoam PROPERTIES
+  LINK_DIRECTORIES           ${OPENFOAM_LINK_DIRS}
   INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
   target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
