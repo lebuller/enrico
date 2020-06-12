@@ -74,7 +74,7 @@ else()
   INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
   target_include_directories(chtMultiRegionFoam ${OPENFOAM_INCLUDE_DIRS})
 
-  add_library(openFOAM-imported INTERFACE IMPORTED)git pu
+  add_library(openFOAM-imported INTERFACE IMPORTED)
   target_link_libraries(openFOAM-imported ${OPENFOAM_LIBS})
   # necessary for CMake < 3.12
   # target_link_directories(openFOAM-imported ${OPENFOAM_LINK_DIRS})
