@@ -4,6 +4,7 @@ if(NOT DEFINED ENV{WM_PROJECT})
   message(WARNING "Environment does not contain the necessary OpenFOAM variables.")
   set(OpenFOAM_FOUND False)
 else()
+
   set(OPENFOAM_LINK_DIRS $ENV{FOAM_LIBBIN})
 
   # removed -m64 flag from this list
@@ -71,9 +72,10 @@ else()
   target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBS})
   # necessary for CMake < 3.12
   # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
-  set_target_properties(chtMultiRegionFoam PROPERTIES
-  LINK_DIRECTORIES           ${OPENFOAM_LINK_DIRS}
-  INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
+  link_directories(${OPENFOAM_LINK_DIRS})
+  # set_target_properties(chtMultiRegionFoam PROPERTIES
+  # LINK_DIRECTORIES           ${OPENFOAM_LINK_DIRS}
+  # INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
   target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
   # add_library(openFOAM-imported INTERFACE IMPORTED)
