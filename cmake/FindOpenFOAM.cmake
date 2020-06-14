@@ -1,5 +1,3 @@
-
-
 if(NOT DEFINED ENV{WM_PROJECT})
   message(WARNING "Environment does not contain the necessary OpenFOAM variables.")
   set(OpenFOAM_FOUND False)
@@ -10,6 +8,7 @@ else()
   message(STATUS "OpenFOAM ${OPENFOAM_LINK_DIRS}")
   # removed -m64 flag from this list
   set(OPENFOAM_DEFINITIONS -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
+  set(OPENFOAM_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --no-as-needed -Xlinker --add-needed")
 
   set(CHT_DIR ${CMAKE_SOURCE_DIR}/cht_interface)
 
@@ -46,7 +45,7 @@ else()
   )
 
   set(OPENFOAM_EXTRA_LIBS dl m)
-  set(OPENFOAM_LIBS
+  set(OPENFOAM_LIBRARY_NAMES
   fluidThermophysicalModels
   specie
   reactionThermophysicalModels
@@ -68,14 +67,20 @@ else()
   ${OPENFOAM_EXTRA_LIBS}
   )
 
-  # TO-DO : use target-specific versions of these
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --no-as-needed -Xlinker --add-needed")
-  link_directories(${OPENFOAM_LINK_DIRS})
+  # get absolute paths of the necessary librares
+  foreach(FOAM_LIB ${OPENFOAM_LIBRARY_NAMES})
+    find_library("${FOAM_LIB}_LIB" ${FOAM_LIB} HINTS ${OPENFOAM_LINK_DIRS})
+    list(APPEND OPENFOAM_LIBRARIES ${${FOAM_LIB}_LIB})
+  endforeach(FOAM_LIB ${OPENFOAM_LIBRARY_NAMES})
 
   add_executable(chtMultiRegionFoam ${CHT_DIR}/chtMultiRegionFoam.C ${OPENFOAM_SOURCES})
   target_compile_definitions(chtMultiRegionFoam PUBLIC ${OPENFOAM_DEFINITIONS})
-  target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBS})
+  set_target_properties(chtMultiRegionFoam PROPERTIES LINK_FLAGS ${OPENFOAM_LINKER_FLAGS})
+  target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBRARIES})
   target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
+
+  ### FOR FUTURE USE, IMPORTED TARGET FOR OPENFOAM ###
+
   # necessary for CMake < 3.12
   # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
   # set_target_properties(chtMultiRegionFoam PROPERTIES
