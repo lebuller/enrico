@@ -5,7 +5,6 @@ else()
 
   set(OPENFOAM_LINK_DIRS $ENV{FOAM_LIBBIN})
 
-  message(STATUS "OpenFOAM ${OPENFOAM_LINK_DIRS}")
   # removed -m64 flag from this list
   set(OPENFOAM_DEFINITIONS -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
   set(OPENFOAM_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --no-as-needed -Xlinker --add-needed")
@@ -23,25 +22,25 @@ else()
   ${CHT_DIR}/porousFluid/
   ${CHT_DIR}/porousSolid/
   ${CHT_DIR}/include/
-  $ENV{WM_PROJECT_DIR}/src/meshTools/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/sampling/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/finiteVolume/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/finiteVolume/cfdTools/
-  $ENV{WM_PROJECT_DIR}/src/thermophysicalModels/basic/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/thermophysicalModels/specie/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/thermophysicalModels/reactionThermo/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/thermophysicalModels/solidThermo/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/thermophysicalModels/chemistryModel/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/ODE/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/combustionModels/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/MomentumTransportModels/momentumTransportModels/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/MomentumTransportModels/compressible/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/ThermophysicalTransportModels/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/ThermophysicalTransportModels/rhoReactionThermo/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/radiationModels/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/regionModels/regionModel/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/OpenFOAM/lnInclude/
-  $ENV{WM_PROJECT_DIR}/src/OSspecific/POSIX/lnInclude/
+  $ENV{FOAM_SRC}/meshTools/lnInclude/
+  $ENV{FOAM_SRC}/sampling/lnInclude/
+  $ENV{FOAM_SRC}/finiteVolume/lnInclude/
+  $ENV{FOAM_SRC}/finiteVolume/cfdTools/
+  $ENV{FOAM_SRC}/thermophysicalModels/basic/lnInclude/
+  $ENV{FOAM_SRC}/thermophysicalModels/specie/lnInclude/
+  $ENV{FOAM_SRC}/thermophysicalModels/reactionThermo/lnInclude/
+  $ENV{FOAM_SRC}/thermophysicalModels/solidThermo/lnInclude/
+  $ENV{FOAM_SRC}/thermophysicalModels/chemistryModel/lnInclude/
+  $ENV{FOAM_SRC}/ODE/lnInclude/
+  $ENV{FOAM_SRC}/combustionModels/lnInclude/
+  $ENV{FOAM_SRC}/MomentumTransportModels/momentumTransportModels/lnInclude/
+  $ENV{FOAM_SRC}/MomentumTransportModels/compressible/lnInclude/
+  $ENV{FOAM_SRC}/ThermophysicalTransportModels/lnInclude/
+  $ENV{FOAM_SRC}/ThermophysicalTransportModels/rhoReactionThermo/lnInclude/
+  $ENV{FOAM_SRC}/radiationModels/lnInclude/
+  $ENV{FOAM_SRC}/regionModels/regionModel/lnInclude/
+  $ENV{FOAM_SRC}/OpenFOAM/lnInclude/
+  $ENV{FOAM_SRC}/OSspecific/POSIX/lnInclude/
   )
 
   set(OPENFOAM_EXTRA_LIBS dl m)
