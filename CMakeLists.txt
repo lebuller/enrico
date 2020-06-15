@@ -9,6 +9,8 @@ if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64")
   set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "-dynamic")
 endif ()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
 # =============================================================================
 # Check for SCALE (optional)
 # =============================================================================
@@ -58,6 +60,13 @@ if (USE_NEK)
     add_subdirectory(vendor/nek5000)
 endif()
 add_subdirectory(vendor/openmc)
+
+# =============================================================================
+# Find OpenFOAM installation
+# =============================================================================
+if (USE_FOAM)
+  find_package(OpenFOAM REQUIRED)
+endif()
 
 # =============================================================================
 # IAPWS Correlations
