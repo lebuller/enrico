@@ -25,6 +25,9 @@ public:
   explicit FoamDriver(MPI_Comm comm, pugi::xml_node xml_root);
 
 
+  void foam_init(MPI_Comm comm);
+
+
   ~FoamDriver();
 
 

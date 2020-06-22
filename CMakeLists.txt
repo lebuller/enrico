@@ -65,6 +65,7 @@ add_subdirectory(vendor/openmc)
 # Find OpenFOAM installation
 # =============================================================================
 if (USE_FOAM)
+  add_subdirectory(cht_interface)
   find_package(OpenFOAM REQUIRED)
 endif()
 
@@ -131,7 +132,8 @@ endif()
 
 if (USE_FOAM)
     target_compile_definitions(libenrico PRIVATE USE_FOAM)
-#    list(APPEND LIBRARIES libchtMultiRegionFoam)
+#    list(APPEND LIBRARIES ${OPENFOAM_LIBRARIES})
+    list(APPEND LIBRARIES libopenFOAM-imported)
 endif()
 
 if (SCALE_FOUND)

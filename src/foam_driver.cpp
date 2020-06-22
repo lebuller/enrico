@@ -1,4 +1,5 @@
 #include "enrico/foam_driver.h"
+#include "enrico/enricoFoamLibrary.H"
 
 #include "enrico/error.h"
 #include "gsl/gsl"
@@ -18,39 +19,20 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
 {
   //! Need to determine what this portion of the nekDriver does and how it needs
   //! to be applied for an OpenFOAM driver and setting up MPI
-  //! if (active()) {
-    //! casename_ = node.child_value("casename")
-    //! if (comm_.rank == 0) {
-    //!   init_session_name();
-  //! }
+  if (active()) {
 
-  //! MPI_Fint int_comm = MPI_Comm_c2f(comm_.comm);
-  //! C2F_nek_init(static_cast<const int*>(&int_comm));
-
-  //! Process for getting the number of local and global elements needs to be different than
-  //! nek
-  //!
+    foam_init(comm);
   //! Determining fluid mask may need to be done here, as there need be a link between the
   //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
   //! on a local process
 
-  //! nelgt_ = nek_get_nelgt();
-  //! nelt_ = nek_get_nelt();
+  //! nelgt_ = foam_get_nelgt();
+  //! nelt_ = foam_get_nelt();
 
-  //! init_displs()
+    init_displs();
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
 }
-
-//! How much of this function is needed in OpenFOAM, where there is no case names?
-//! void FoamDriver::init_session_name()
-//! {
-  //! char path_buffer[PATH_MAX];
-  //! err_chk(getcwd(path_buffer, PATH_MAX) == path_buffer ? 0 : -1,
-  //!         "Error writing SESSION.NAME in NekDriver");
-
-  //! std::ofstream session_name("SESSION.NAME");
-  //! session_name << casename_ << std::endl << path_buffer << std::endl;
-  //! session_name.close();
-//! }
 
 std::vector<double> FoamDriver::temperature_local() const
 {
