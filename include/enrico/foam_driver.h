@@ -24,19 +24,11 @@ public:
   //! \param comm The MPI communicator used to initialize OpenFOAM
   explicit FoamDriver(MPI_Comm comm, pugi::xml_node xml_root);
 
-
-  void foam_init(MPI_Comm comm);
-
-
   ~FoamDriver();
-
-
 
   //! runs all timesteps for a heat/fluid solve in OpenFOAM
   //!
   void solve_step() final;
-
-
 
   //! whether the calling rank has access to the full thermal-hydraulic solution field.
   //! Only OpenFOAM's master rank has access to the global data; data on other ranks is empty
