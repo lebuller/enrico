@@ -72,27 +72,18 @@ else()
     list(APPEND OPENFOAM_LIBRARIES ${${FOAM_LIB}_LIB})
   endforeach(FOAM_LIB ${OPENFOAM_LIBRARY_NAMES})
 
-  add_executable(chtMultiRegionFoam ${CHT_DIR}/chtMultiRegionFoam.C ${OPENFOAM_SOURCES})
-  target_compile_definitions(chtMultiRegionFoam PUBLIC ${OPENFOAM_DEFINITIONS})
-  set_target_properties(chtMultiRegionFoam PROPERTIES LINK_FLAGS ${OPENFOAM_LINKER_FLAGS})
-  target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBRARIES})
-  target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
+#  add_executable(chtMultiRegionFoam ${CHT_DIR}/chtMultiRegionFoam.C ${OPENFOAM_SOURCES})
+#  target_compile_definitions(chtMultiRegionFoam PUBLIC ${OPENFOAM_DEFINITIONS})
+#  set_target_properties(chtMultiRegionFoam PROPERTIES LINK_FLAGS ${OPENFOAM_LINKER_FLAGS})
+#  target_link_libraries(chtMultiRegionFoam PUBLIC ${OPENFOAM_LIBRARIES})
+#  target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
   ### FOR FUTURE USE, IMPORTED TARGET FOR OPENFOAM ###
-
-  # necessary for CMake < 3.12
-  # target_link_directories(chtMultiRegionFoam ${OPENFOAM_LINK_DIRS})
-  # set_target_properties(chtMultiRegionFoam PROPERTIES
-  # LINK_DIRECTORIES           ${OPENFOAM_LINK_DIRS}
-  # INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
-
-  # add_library(openFOAM-imported INTERFACE IMPORTED)
-  # target_link_libraries(openFOAM-imported ${OPENFOAM_LIBS})
-  # # necessary for CMake < 3.12
-  # # target_link_directories(openFOAM-imported ${OPENFOAM_LINK_DIRS})
-  # set_target_properties(openFOAM-imported PROPERTIES
-  # INTERFACE_LINK_DIRECTORIES ${OPENFOAM_LINK_DIRS})
-  # target_include_directories(openFOAM-imported ${OPENFOAM_INCLUDE_DIRS})
+  add_library(openFOAM-imported ${CHT_DIR}/enricoFoamLibrary.C ${OPENFOAM_SOURCES})
+  target_compile_definitions(openFOAM-imported PUBLIC ${OPENFOAM_DEFINITIONS})
+  set_target_properties(openFOAM-imported PROPERTIES LINK_FLAGS ${OPENFOAM_LINKER_FLAGS})
+  target_link_libraries(openFOAM-imported PUBLIC ${OPENFOAM_LIBRARIES})
+  target_include_directories(openFOAM-imported PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
   set(OpenFOAM_FOUND True)
 endif()

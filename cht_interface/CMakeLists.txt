@@ -8,12 +8,12 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker --no-as-needed -
 link_directories($ENV{FOAM_LIBBIN})
 
 # Adds compiler flags needed in OpenFOAM
-add_definitions( -m64 -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
+add_definitions( -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRepository)
 
 
 # Add source to this project's executable
 # Mimics the options in Make/files file
-add_executable (chtMultiRegionFoam chtMultiRegionFoam.C solid/solidRegionDiffNo.C fluid/compressibleCourantNo.C)
+add_library (openFOAM-imported enricoFoamLibrary.C solid/solidRegionDiffNo.C fluid/compressibleCourantNo.C)
 
 #Adds the include directories
 # Mimics the options in the Make/options file
@@ -69,4 +69,4 @@ set( LIBS
           ${EXTRA_LIBS}
 )
 
-target_link_libraries(chtMultiRegionFoam ${LIBS})
+target_link_libraries(openFOAM-imported ${LIBS})
