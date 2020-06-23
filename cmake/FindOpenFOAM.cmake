@@ -79,7 +79,7 @@ else()
 #  target_include_directories(chtMultiRegionFoam PUBLIC ${OPENFOAM_INCLUDE_DIRS})
 
   ### FOR FUTURE USE, IMPORTED TARGET FOR OPENFOAM ###
-  add_library(openFOAM-imported ${CHT_DIR}/enricoFoamLibrary.C ${OPENFOAM_SOURCES})
+  add_library(openFOAM-imported SHARED ${CHT_DIR}/enricoFoamLibrary.C ${OPENFOAM_SOURCES})
   target_compile_definitions(openFOAM-imported PUBLIC ${OPENFOAM_DEFINITIONS})
   set_target_properties(openFOAM-imported PROPERTIES LINK_FLAGS ${OPENFOAM_LINKER_FLAGS})
   target_link_libraries(openFOAM-imported PUBLIC ${OPENFOAM_LIBRARIES})

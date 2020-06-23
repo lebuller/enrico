@@ -1,5 +1,5 @@
 #include "enrico/foam_driver.h"
-#include "enrico/enricoFoamLibrary.H"
+#include "enricoFoamLibrary.H"
 
 #include "enrico/error.h"
 #include "gsl/gsl"
@@ -21,7 +21,7 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
   //! to be applied for an OpenFOAM driver and setting up MPI
   if (active()) {
 
-    foam_init(comm);
+  foam_init(&comm);
   //! Determining fluid mask may need to be done here, as there need be a link between the
   //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
   //! on a local process

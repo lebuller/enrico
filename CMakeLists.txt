@@ -103,7 +103,7 @@ if (USE_NEK)
 endif()
 
 if (USE_FOAM)
-    list(APPEND SOURCES src/foam_driver.cpp)
+  list(APPEND SOURCES src/foam_driver.cpp)
 endif()
 
 if (SCALE_FOUND)
@@ -133,7 +133,7 @@ endif()
 if (USE_FOAM)
     target_compile_definitions(libenrico PRIVATE USE_FOAM)
 #    list(APPEND LIBRARIES ${OPENFOAM_LIBRARIES})
-    list(APPEND LIBRARIES libopenFOAM-imported)
+    list(APPEND LIBRARIES openFOAM-imported)
 endif()
 
 if (SCALE_FOUND)

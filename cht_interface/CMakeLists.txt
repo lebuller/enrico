@@ -13,7 +13,7 @@ add_definitions( -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -DNoRe
 
 # Add source to this project's executable
 # Mimics the options in Make/files file
-add_library (openFOAM-imported enricoFoamLibrary.C solid/solidRegionDiffNo.C fluid/compressibleCourantNo.C)
+add_library(chtMultiRegionFoam chtMultiRegionFoam.C solid/solidRegionDiffNo.C fluid/compressibleCourantNo.C)
 
 #Adds the include directories
 # Mimics the options in the Make/options file
@@ -69,4 +69,4 @@ set( LIBS
           ${EXTRA_LIBS}
 )
 
-target_link_libraries(openFOAM-imported ${LIBS})
+target_link_libraries(chtMultiRegionFoam PUBLIC ${LIBS})
