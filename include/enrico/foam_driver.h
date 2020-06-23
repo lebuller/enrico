@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "argList.H"
+
 namespace enrico {
 
 //! driver to initialize and run OpenFOAM in stages
@@ -24,7 +26,7 @@ public:
   //! \param comm The MPI communicator used to initialize OpenFOAM
   explicit FoamDriver(MPI_Comm comm, pugi::xml_node xml_root);
 
-  ~FoamDriver(){ delete args_ };
+  ~FoamDriver();
 
   //! runs all timesteps for a heat/fluid solve in OpenFOAM
   //!
@@ -79,11 +81,11 @@ public:
 
   //! Get the number of local mesh elements
   //! \return Number of local mesh elements
-  int n_local_elem() const;
+  int n_local_elem() const override { return active() ? nelt_ : 0; }
 
   //! Get the number of global mesh elements
   //! \return Number of global mesh elements
-  std::size_t n_global_elem() const;
+  std::size_t n_global_elem() const override { return active() ? nelgt_ : 0; }
 
 private:
   //! Get temperautre of local mesh elements
@@ -108,7 +110,7 @@ private:
 
   int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
-  foam::argList* args_
+  Foam::argList* args_;
 };
 
 } // namespace enrico

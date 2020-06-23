@@ -37,47 +37,59 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
   //! to be applied for an OpenFOAM driver and setting up MPI
   if (active()) {
 
-  //foam_init(&comm);
+    int argc=2;
+    char *argv[1];
+    std::string parallel_arg = "-parallel";
+    argv[0]=const_cast<char*>( parallel_arg.c_str());
+    char** pargv =argv;
 
- int argc=2;
-  char *argv[1];
-  std::string parallel_arg = "-parallel";
-  argv[0]=const_cast<char*>( parallel_arg.c_str());
-  char** pargv =argv;
-
-  #define NO_CONTROL
-  #define CREATE_MESH createMeshesPostProcess.H
+    #define NO_CONTROL
+    #define CREATE_MESH createMeshesPostProcess.H
 
 // These includes and argList call replace the contents of setRootCaseLists.H
-  #include "listOptions.H"
-  args_ = new Foam::argList(argc,pargv, false, false, true, comm);
-  //Foam::argList args(argc, pargv, false, false, true, comm);
-  if (!args.checkRootCase())
-  {
-    Foam::FatalError.exit();
-  }
-  #include "listOutput.H"
+    #include "listOptions.H"
+    args_ = new Foam::argList(argc,pargv, false, false, true, (void*)&comm);
+    Foam::argList &args = *args_;
+    if (!args.checkRootCase())
+    {
+      Foam::FatalError.exit();
+    }
+    #include "listOutput.H"
 
-  #include "createTime.H"
-  #include "createMeshes.H"
-  #include "createFields.H"
-  #include "initContinuityErrs.H"
-  pimpleMultiRegionControl pimples(fluidRegions, solidRegions);
-  #include "createFluidPressureControls.H"
-  #include "createTimeControls.H"
-  #include "readSolidTimeControls.H"
-  #include "compressibleMultiRegionCourantNo.H"
-  #include "solidRegionDiffusionNo.H"
-  #include "setInitialMultiRegionDeltaT.H"
+    #include "createTime.H"
+    #include "createMeshes.H"
+    #include "createFields.H"
+    #include "initContinuityErrs.H"
+    pimpleMultiRegionControl pimples(fluidRegions, solidRegions);
+    #include "createFluidPressureControls.H"
+    #include "createTimeControls.H"
+    #include "readSolidTimeControls.H"
+    #include "compressibleMultiRegionCourantNo.H"
+    #include "solidRegionDiffusionNo.H"
+    #include "setInitialMultiRegionDeltaT.H"
 
-  // block above replaces call to foam_init
+    //! Determining fluid mask may need to be done here, as there need be a link between the
+    //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
+    //! on a local process
 
-  //! Determining fluid mask may need to be done here, as there need be a link between the
-  //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
-  //! on a local process
+    nelt_ = 0;
 
-  //! nelgt_ = foam_get_nelgt();
-  //! nelt_ = foam_get_nelt();
+    nelgt_ = 0;
+
+    for (int i = 0; i < fluidRegions.size(); i++)
+    {
+      nelgt_ = nelgt_ + fluidRegions[i].globalData().nTotalCells();
+      nelt_ = nelt_ + fluidRegions[i].nCells();
+    }
+    for (int i = 0; i < solidRegions.size(); i++)
+    {
+      nelgt_ = nelgt_ + solidRegions[i].globalData().nTotalCells();
+      nelt_ = nelt_ + solidRegions[i].nCells();
+    }
+//    Pout<< "\n The number of local elements on " << Pstream::myProcNo() << " is "
+//        << nelt_ << endl;
+//    Pout<< "\n The number of global elements is "
+//        << nelgt_ << endl;
 
     init_displs();
   }
@@ -124,17 +136,6 @@ std::vector<double> FoamDriver::density_local() const
 void FoamDriver::solve_step()
 {
   //! add calls to the foam module for running x timesteps
-}
-
-
-int FoamDriver::n_local_elem() const
-{
-//!  foam_get_n_local_elements()
-}
-
-std::size_t FoamDriver::n_global_elem() const
-{
-//!  foam_get_n_global_elements()
 }
 
 Position FoamDriver::centroid_at(int32_t local_elem) const
@@ -196,9 +197,7 @@ int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
 
 FoamDriver::~FoamDriver()
 {
-  //! if (active())
-  //!   C2F_nek_end();
-  //! MPI_Barrier(MPI_COMM_WORLD);
+  delete args_;
 }
 
 } // namespace enrico
