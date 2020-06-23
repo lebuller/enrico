@@ -1,8 +1,21 @@
 #include "enrico/foam_driver.h"
-<<<<<<< HEAD
 #include "enricoFoamLibrary.H"
-=======
->>>>>>> Establishes the header and source files for the foamDriver class
+#include "fvCFD.H"
+#include "fluidThermoMomentumTransportModel.H"
+#include "rhoReactionThermophysicalTransportModel.H"
+#include "rhoReactionThermo.H"
+#include "CombustionModel.H"
+#include "fixedGradientFvPatchFields.H"
+#include "regionProperties.H"
+#include "compressibleCourantNo.H"
+#include "solidRegionDiffNo.H"
+#include "solidThermo.H"
+#include "radiationModel.H"
+#include "fvOptions.H"
+#include "coordinateSystem.H"
+#include "pimpleMultiRegionControl.H"
+#include "pressureControl.H"
+
 
 #include "enrico/error.h"
 #include "gsl/gsl"
@@ -24,7 +37,41 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
   //! to be applied for an OpenFOAM driver and setting up MPI
   if (active()) {
 
-  foam_init(&comm);
+  //foam_init(&comm);
+
+ int argc=2;
+  char *argv[1];
+  std::string parallel_arg = "-parallel";
+  argv[0]=const_cast<char*>( parallel_arg.c_str());
+  char** pargv =argv;
+
+  #define NO_CONTROL
+  #define CREATE_MESH createMeshesPostProcess.H
+
+// These includes and argList call replace the contents of setRootCaseLists.H
+  #include "listOptions.H"
+  args_ = new Foam::argList(argc,pargv, false, false, true, comm);
+  //Foam::argList args(argc, pargv, false, false, true, comm);
+  if (!args.checkRootCase())
+  {
+    Foam::FatalError.exit();
+  }
+  #include "listOutput.H"
+
+  #include "createTime.H"
+  #include "createMeshes.H"
+  #include "createFields.H"
+  #include "initContinuityErrs.H"
+  pimpleMultiRegionControl pimples(fluidRegions, solidRegions);
+  #include "createFluidPressureControls.H"
+  #include "createTimeControls.H"
+  #include "readSolidTimeControls.H"
+  #include "compressibleMultiRegionCourantNo.H"
+  #include "solidRegionDiffusionNo.H"
+  #include "setInitialMultiRegionDeltaT.H"
+
+  // block above replaces call to foam_init
+
   //! Determining fluid mask may need to be done here, as there need be a link between the
   //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
   //! on a local process

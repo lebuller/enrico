@@ -24,7 +24,7 @@ public:
   //! \param comm The MPI communicator used to initialize OpenFOAM
   explicit FoamDriver(MPI_Comm comm, pugi::xml_node xml_root);
 
-  ~FoamDriver();
+  ~FoamDriver(){ delete args_ };
 
   //! runs all timesteps for a heat/fluid solve in OpenFOAM
   //!
@@ -108,6 +108,7 @@ private:
 
   int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
+  foam::argList* args_
 };
 
 } // namespace enrico
