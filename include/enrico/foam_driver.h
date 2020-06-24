@@ -79,6 +79,10 @@ public:
   //! \return Error code
   int set_heat_source_at(int32_t local_elem, double heat) override;
 
+  //! Converts the enrico local_element into the appropriate region and region
+  //! element needed for OpenFOAM
+  std::vector<int> get_elem(int32_t local_elem);
+
   //! Get the number of local mesh elements
   //! \return Number of local mesh elements
   int n_local_elem() const override { return active() ? nelt_ : 0; }
@@ -88,7 +92,7 @@ public:
   std::size_t n_global_elem() const override { return active() ? nelgt_ : 0; }
 
 private:
-  //! Get temperautre of local mesh elements
+  //! Get temperature of local mesh elements
   //! \return Temperature of local mesh elements in [K]
   std::vector<double> temperature_local() const override;
 
@@ -110,6 +114,13 @@ private:
 
   int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
+
+  int32_t n_fluid_regions_;
+  int32_t n_solid_regions_;
+  int32_t n_total_regions_;
+
+  std::vector<int> local_regions_size_;
+
   std::shared_ptr<Foam::argList> args_;
 };
 

@@ -49,7 +49,7 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
 // These includes and argList call replace the contents of setRootCaseLists.H
     #include "listOptions.H"
 //    args_ = new Foam::argList(argc,pargv, false, false, true, (void*)&comm);
-    args_ = std::make_shared<Foam::argList> (argc, pargv, false, false, true, (void*)&comm);
+    args_ = std::make_shared<Foam::argList> (argc, pargv, false, false, true, &comm);
     Foam::argList &args = *(args_.get());
     if (!args.checkRootCase())
     {
@@ -70,22 +70,65 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
     #include "setInitialMultiRegionDeltaT.H"
 
     nelt_ = 0;
-
     nelgt_ = 0;
 
-    for (int i = 0; i < fluidRegions.size(); i++)
+    n_fluid_regions_=fluidRegions.size();
+    n_solid_regions_=solidRegions.size();
+    n_total_regions_=n_fluid_regions_+n_solid_regions_;
+
+    for (int i = 0; i < n_fluid_regions_; i++)
     {
       nelgt_ = nelgt_ + fluidRegions[i].globalData().nTotalCells();
       nelt_ = nelt_ + fluidRegions[i].nCells();
     }
-    for (int i = 0; i < solidRegions.size(); i++)
+    for (int i = 0; i < n_solid_regions_; i++)
     {
       nelgt_ = nelgt_ + solidRegions[i].globalData().nTotalCells();
       nelt_ = nelt_ + solidRegions[i].nCells();
     }
+
+    local_regions_size_.resize(n_total_regions_);
+    for (int i = 0; i <n_total_regions_; i++)
+    {
+      if (i < n_fluid_regions_)
+      {
+        local_regions_size_.at(i)=fluidRegions[i].nCells();
+      }
+      else
+      {
+        local_regions_size_.at(i)=solidRegions[i].nCells();
+      }
+    }
+
     init_displs();
   }
   MPI_Barrier(MPI_COMM_WORLD);
+}
+
+std::vector<int> FoamDriver::get_elem(int32_t local_elem)
+{
+  int search_num = 0;
+  int temp = 0;
+
+  int region_num;
+  int region_elem;
+
+  for (int32_t i = 0; i < n_total_regions_; i++)
+  {
+    temp = search_num + local_regions_size_.at(i);
+    if (temp < local_elem)
+    {
+      search_num=temp;
+    }
+    else
+    {
+      region_num=i;
+      region_elem = temp - local_elem;
+      break;
+    }
+
+  }
+  return {region_num, region_elem};
 }
 
 std::vector<double> FoamDriver::temperature_local() const
