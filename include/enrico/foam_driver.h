@@ -110,7 +110,7 @@ private:
 
   int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
-  Foam::argList* args_;
+  std::shared_ptr<Foam::argList> args_;
 };
 
 } // namespace enrico

@@ -48,8 +48,9 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
 
 // These includes and argList call replace the contents of setRootCaseLists.H
     #include "listOptions.H"
-    args_ = new Foam::argList(argc,pargv, false, false, true, (void*)&comm);
-    Foam::argList &args = *args_;
+//    args_ = new Foam::argList(argc,pargv, false, false, true, (void*)&comm);
+    args_ = std::make_shared<Foam::argList> (argc, pargv, false, false, true, (void*)&comm);
+    Foam::argList &args = *(args_.get());
     if (!args.checkRootCase())
     {
       Foam::FatalError.exit();
@@ -68,10 +69,6 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
     #include "solidRegionDiffusionNo.H"
     #include "setInitialMultiRegionDeltaT.H"
 
-    //! Determining fluid mask may need to be done here, as there need be a link between the
-    //! local_elem variable IDs and which material it is (i.e. nelt=SUM of elements in each region
-    //! on a local process
-
     nelt_ = 0;
 
     nelgt_ = 0;
@@ -86,11 +83,6 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
       nelgt_ = nelgt_ + solidRegions[i].globalData().nTotalCells();
       nelt_ = nelt_ + solidRegions[i].nCells();
     }
-//    Pout<< "\n The number of local elements on " << Pstream::myProcNo() << " is "
-//        << nelt_ << endl;
-//    Pout<< "\n The number of global elements is "
-//        << nelgt_ << endl;
-
     init_displs();
   }
   MPI_Barrier(MPI_COMM_WORLD);
@@ -197,7 +189,7 @@ int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
 
 FoamDriver::~FoamDriver()
 {
-  delete args_;
+//  delete args_;
 }
 
 } // namespace enrico
