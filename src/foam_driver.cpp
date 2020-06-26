@@ -96,35 +96,30 @@ void FoamDriver::initialize(MPI_Comm comm) {
         )
       );
     }
-
-
 //    end #include "createMeshes.H"
 
 //    #include "createFields.H"
 //      #include createFluidFields.H
-// Initialise fluid field pointer lists
-    PtrList<rhoReactionThermo> thermoFluid(fluidRegions.size());
-    PtrList<volScalarField> rhoFluid(fluidRegions.size());
-    PtrList<volScalarField> QFluid(fluidRegions.size());
-    PtrList<volVectorField> UFluid(fluidRegions.size());
-    PtrList<surfaceScalarField> phiFluid(fluidRegions.size());
-    PtrList<uniformDimensionedVectorField> gFluid(fluidRegions.size());
-    PtrList<uniformDimensionedScalarField> hRefFluid(fluidRegions.size());
-    PtrList<volScalarField> ghFluid(fluidRegions.size());
-    PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
-    PtrList<compressible::momentumTransportModel> turbulenceFluid(fluidRegions.size());
-    PtrList<rhoReactionThermophysicalTransportModel> thermophysicalTransportFluid(fluidRegions.size());
-    PtrList<CombustionModel<rhoReactionThermo>> reactionFluid(fluidRegions.size());
-    PtrList<volScalarField> p_rghFluid(fluidRegions.size());
-    PtrList<radiationModel> radiation(fluidRegions.size());
-    PtrList<volScalarField> KFluid(fluidRegions.size());
-    PtrList<volScalarField> dpdtFluid(fluidRegions.size());
-    PtrList<multivariateSurfaceInterpolationScheme<scalar>::fieldTable> fieldsFluid(fluidRegions.size());
-
-    List<scalar> initialMassFluid(fluidRegions.size());
-
-    PtrList<IOMRFZoneList> MRFfluid(fluidRegions.size());
-    PtrList<fv::options> fluidFvOptions(fluidRegions.size());
+    thermoFluid.setSize(fluidRegions.size());
+    rhoFluid.setSize(fluidRegions.size());
+    QFluid.setSize(fluidRegions.size());
+    UFluid.setSize(fluidRegions.size());
+    phiFluid.setSize(fluidRegions.size());
+    gFluid.setSize(fluidRegions.size());
+    hRefFluid.setSize(fluidRegions.size());
+    ghFluid.setSize(fluidRegions.size());
+    ghfFluid.setSize(fluidRegions.size());
+    turbulenceFluid.setSize(fluidRegions.size());
+    thermophysicalTransportFluid.setSize(fluidRegions.size());
+    reactionFluid.setSize(fluidRegions.size());
+    p_rghFluid.setSize(fluidRegions.size());
+    radiation.setSize(fluidRegions.size());
+    KFluid.setSize(fluidRegions.size());
+    dpdtFluid.setSize(fluidRegions.size());
+    fieldsFluid.setSize(fluidRegions.size());
+    initialMassFluid.resize(fluidRegions.size());
+    MRFfluid.setSize(fluidRegions.size());
+    fluidFvOptions.setSize(fluidRegions.size());
 
 // Populate fluid field pointer lists
     forAll(fluidRegions, i) {
@@ -371,7 +366,131 @@ void FoamDriver::initialize(MPI_Comm comm) {
     turbulenceFluid[i].validate();
 }
 
-      #include "createSolidFields.H"
+//      #include "createSolidFields.H"
+coordinates.setSize(solidRegions.size());
+thermos.setSize(solidRegions.size());
+radiations.setSize(solidRegions.size());
+solidHeatSources.setSize(solidRegions.size());
+betavSolid.setSize(solidRegions.size());
+Qsolid.setSize(solidRegions.size());
+aniAlphas.setSize(solidRegions.size());
+
+forAll(solidRegions, i)
+{
+    Info<< "*** Reading solid mesh thermophysical properties for region "
+        << solidRegions[i].name() << nl << endl;
+
+    Info<< "    Adding to thermos\n" << endl;
+    thermos.set(i, solidThermo::New(solidRegions[i]));
+
+    Info<< "    Adding to Qsolid\n" << endl;
+        Qsolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "Q",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );
+
+    Info<< "    Adding to radiations\n" << endl;
+    radiations.set(i, radiationModel::New(thermos[i].T()));
+
+    Info<< "    Adding fvOptions\n" << endl;
+    solidHeatSources.set
+    (
+        i,
+        new fv::options(solidRegions[i])
+    );
+
+    if (!thermos[i].isotropic())
+    {
+        Info<< "    Adding coordinateSystems\n" << endl;
+        coordinates.set
+        (
+            i,
+            coordinateSystem::New(solidRegions[i], thermos[i])
+        );
+
+        tmp<volVectorField> tkappaByCp =
+            thermos[i].Kappa()/thermos[i].Cp();
+
+        aniAlphas.set
+        (
+            i,
+            new volSymmTensorField
+            (
+                IOobject
+                (
+                    "Anialpha",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
+                ),
+                solidRegions[i],
+                dimensionedSymmTensor
+                (
+                    "zero",
+                    tkappaByCp().dimensions(),
+                    Zero
+                ),
+                zeroGradientFvPatchSymmTensorField::typeName
+            )
+        );
+
+        aniAlphas[i].primitiveFieldRef() =
+            coordinates[i].R().transformVector(tkappaByCp());
+        aniAlphas[i].correctBoundaryConditions();
+
+    }
+
+    IOobject betavSolidIO
+    (
+        "betavSolid",
+        runTime.timeName(),
+        solidRegions[i],
+        IOobject::MUST_READ,
+        IOobject::AUTO_WRITE
+    );
+
+    if (betavSolidIO.typeHeaderOk<volScalarField>(true))
+    {
+        betavSolid.set
+        (
+            i,
+            new volScalarField(betavSolidIO, solidRegions[i])
+        );
+    }
+    else
+    {
+        betavSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "betavSolid",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
+                ),
+                solidRegions[i],
+                dimensionedScalar(dimless, scalar(1))
+            )
+        );
+    }
+}
 
 
 
@@ -405,8 +524,7 @@ void FoamDriver::initialize(MPI_Comm comm) {
     for (int i = 0; i <n_total_regions_; i++) {
       if (i < n_fluid_regions_) {
         local_regions_size_.at(i)=fluidRegions[i].nCells();
-      }
-      else {
+      } else {
         local_regions_size_.at(i)=solidRegions[i-n_fluid_regions_].nCells();
       }
     }
@@ -515,8 +633,7 @@ Position FoamDriver::centroid_at(int32_t local_elem) const
     x = fluidRegions[region.first].C()[region.second].component(0);
     y = fluidRegions[region.first].C()[region.second].component(1);
     z = fluidRegions[region.first].C()[region.second].component(2);
-  }
- else {
+  } else {
     x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0);
     y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1);
     z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2);
@@ -541,8 +658,7 @@ double FoamDriver::volume_at(int32_t local_elem) const
   region = FoamDriver::get_elem(local_elem);
   if (region.first < n_fluid_regions_) {
     volume = fluidRegions[region.first].V()[region.second];
-  }
-  else {
+  } else {
     volume = solidRegions[region.first-n_fluid_regions_].V()[region.second];
   }
   return volume;
@@ -563,12 +679,11 @@ double FoamDriver::temperature_at(int32_t local_elem) const
   double temperature;
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
-//  if (region.first < n_fluid_regions_){
-//    temperature = thermoFluid[region.first].T()[region.second];
-//  }
-//  else {
-//    temperature = thermos[region.first - n_fluid_regions_].T()[region.second];
-//  }
+  if (region.first < n_fluid_regions_){
+    temperature = thermoFluid[region.first].T()[region.second];
+  } else {
+    temperature = thermos[region.first - n_fluid_regions_].T()[region.second];
+  }
 
   return temperature;
 }
@@ -579,12 +694,11 @@ int FoamDriver::in_fluid_at(int32_t local_elem) const
   //! total_regions_size
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
-//  if (region.first < n_fluid_regions_){
-//    return 1;
-//  }
-//  else {
-//    return 0;
-//  }
+  if (region.first < n_fluid_regions_){
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
@@ -592,18 +706,16 @@ int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
   Expects(local_elem >= 1 && local_elem <= nelt_);
   std::pair<int,int> region;
   region = get_elem(local_elem);
-//  if (region.first < n_fluid_regions_){
-//    QFluid[region.first].ref()[region.second] = heat;
-//  }
-//  else {
-//    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
-//  }
+  if (region.first < n_fluid_regions_){
+    QFluid[region.first].ref()[region.second] = heat;
+  } else {
+    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
+  }
 //  return foam_set_heat_source(local_elem, heat);
 }
 
 FoamDriver::~FoamDriver()
 {
-//  delete args_;
 }
 
 } // namespace enrico

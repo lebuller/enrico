@@ -10,12 +10,25 @@
 #include "pugixml.hpp"
 #include "xtensor/xtensor.hpp"
 
-#include "fvMesh.H"
-
 #include <string>
 #include <vector>
 
-#include "argList.H"
+//#include "argList.H"
+#include "fvCFD.H"
+#include "fluidThermoMomentumTransportModel.H"
+#include "rhoReactionThermophysicalTransportModel.H"
+#include "rhoReactionThermo.H"
+#include "CombustionModel.H"
+#include "fixedGradientFvPatchFields.H"
+#include "regionProperties.H"
+#include "compressibleCourantNo.H"
+#include "solidRegionDiffNo.H"
+#include "solidThermo.H"
+#include "radiationModel.H"
+#include "fvOptions.H"
+#include "coordinateSystem.H"
+#include "pimpleMultiRegionControl.H"
+#include "pressureControl.H"
 
 namespace enrico {
 
@@ -119,16 +132,52 @@ private:
   int32_t nelgt_;  //!< number of local mesh elements
   int32_t nelt_;  //!< number of local mesh elements
 
-  int32_t n_fluid_regions_;
-  int32_t n_solid_regions_;
-  int32_t n_total_regions_;
+  int32_t n_fluid_regions_; //!< number of fluid regions in the foam mesh
+  int32_t n_solid_regions_; //!< number of solid regions in the foam mesh
+  int32_t n_total_regions_; //!< number of total regions in the foam mesh
 
-  std::vector<int> local_regions_size_;
+  std::vector<int> local_regions_size_; //! # of elements in each region of the local process
 
   std::shared_ptr<Foam::argList> args_;
 
+
+  //! defines openfoam mesh objects
   Foam::PtrList<Foam::fvMesh> solidRegions;
   Foam::PtrList<Foam::fvMesh> fluidRegions;
+
+  //! defines openfoam fluid fields
+  Foam::PtrList<rhoReactionThermo> thermoFluid;
+  Foam::PtrList<volScalarField> rhoFluid;
+  Foam::PtrList<volScalarField> QFluid;
+  Foam::PtrList<volVectorField> UFluid;
+  Foam::PtrList<surfaceScalarField> phiFluid;
+  Foam::PtrList<uniformDimensionedVectorField> gFluid;
+  Foam::PtrList<uniformDimensionedScalarField> hRefFluid;
+  Foam::PtrList<volScalarField> ghFluid;
+  Foam::PtrList<surfaceScalarField> ghfFluid;
+  Foam::PtrList<compressible::momentumTransportModel> turbulenceFluid;
+  Foam::PtrList<rhoReactionThermophysicalTransportModel> thermophysicalTransportFluid;
+  Foam::PtrList<CombustionModel<rhoReactionThermo>> reactionFluid;
+  Foam::PtrList<volScalarField> p_rghFluid;
+  Foam::PtrList<radiationModel> radiation;
+  Foam::PtrList<volScalarField> KFluid;
+  Foam::PtrList<volScalarField> dpdtFluid;
+  Foam::PtrList<multivariateSurfaceInterpolationScheme<scalar>::fieldTable> fieldsFluid;
+  Foam::List<scalar> initialMassFluid;
+  Foam::PtrList<IOMRFZoneList> MRFfluid;
+  Foam::PtrList<fv::options> fluidFvOptions;
+
+  //! define openfoam solid fields
+  Foam::PtrList<coordinateSystem> coordinates;
+  Foam::PtrList<solidThermo> thermos;
+  Foam::PtrList<radiationModel> radiations;
+  Foam::PtrList<fv::options> solidHeatSources;
+  Foam::PtrList<volScalarField> betavSolid;
+  Foam::PtrList<volScalarField> Qsolid;
+  Foam::PtrList<volSymmTensorField> aniAlphas;
+
+
+
 };
 
 } // namespace enrico
