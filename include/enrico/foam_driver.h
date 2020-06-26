@@ -10,6 +10,8 @@
 #include "pugixml.hpp"
 #include "xtensor/xtensor.hpp"
 
+#include "fvMesh.H"
+
 #include <string>
 #include <vector>
 
@@ -28,7 +30,7 @@ public:
 
   ~FoamDriver();
 
-  void initialize();
+  void initialize(MPI_Comm comm);
 
   //! runs all timesteps for a heat/fluid solve in OpenFOAM
   //!
@@ -124,6 +126,9 @@ private:
   std::vector<int> local_regions_size_;
 
   std::shared_ptr<Foam::argList> args_;
+
+  Foam::PtrList<Foam::fvMesh> solidRegions;
+  Foam::PtrList<Foam::fvMesh> fluidRegions;
 };
 
 } // namespace enrico

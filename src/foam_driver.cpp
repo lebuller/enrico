@@ -33,9 +33,15 @@ namespace enrico {
 FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
   : HeatFluidsDriver(comm,node)
 {
-  //! Need to determine what this portion of the nekDriver does and how it needs
-  //! to be applied for an OpenFOAM driver and setting up MPI
   if (active()) {
+    initialize(comm);
+    init_displs();
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
+
+void FoamDriver::initialize(MPI_Comm comm) {
 
     int argc=2;
     char *argv[1];
@@ -46,19 +52,331 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
     #define NO_CONTROL
     #define CREATE_MESH createMeshesPostProcess.H
 
-// These includes and argList call replace the contents of setRootCaseLists.H
     #include "listOptions.H"
     args_ = std::make_shared<Foam::argList> (argc, pargv, false, false, true, &comm);
     Foam::argList &args = *(args_.get());
-    if (!args.checkRootCase())
-    {
+    if (!args.checkRootCase()) {
       Foam::FatalError.exit();
     }
     #include "listOutput.H"
 
     #include "createTime.H"
-    #include "createMeshes.H"
-    #include "createFields.H"
+
+//    #include "createMeshes.H"
+    regionProperties rp(runTime);
+
+//      #include "createFluidMeshes.H"
+    const wordList fluidNames (rp.found("fluid") ? rp["fluid"] : wordList(0));
+
+    fluidRegions.setSize((fluidNames.size()));
+
+    forAll(fluidNames, i) {
+      Info<< "Create fluid mesh for region " << fluidNames[i]
+          << " for time = " << runTime.timeName() << nl << endl;
+
+      fluidRegions.set (i, new fvMesh
+        (
+          IOobject(fluidNames[i], runTime.timeName(), runTime, IOobject::MUST_READ)
+        )
+      );
+    }
+
+//      #include "createsolidMeshes.H"
+    const wordList solidNames(rp.found("solid") ? rp["solid"] : wordList(0));
+
+    solidRegions.setSize((solidNames.size()));
+
+    forAll(solidNames, i) {
+      Info<< "Create solid mesh for region " << solidNames[i]
+          << " for time = " << runTime.timeName() << nl << endl;
+
+      solidRegions.set(i, new fvMesh
+        (
+          IOobject(solidNames[i], runTime.timeName(), runTime, IOobject::MUST_READ)
+        )
+      );
+    }
+
+
+//    end #include "createMeshes.H"
+
+//    #include "createFields.H"
+//      #include createFluidFields.H
+// Initialise fluid field pointer lists
+    PtrList<rhoReactionThermo> thermoFluid(fluidRegions.size());
+    PtrList<volScalarField> rhoFluid(fluidRegions.size());
+    PtrList<volScalarField> QFluid(fluidRegions.size());
+    PtrList<volVectorField> UFluid(fluidRegions.size());
+    PtrList<surfaceScalarField> phiFluid(fluidRegions.size());
+    PtrList<uniformDimensionedVectorField> gFluid(fluidRegions.size());
+    PtrList<uniformDimensionedScalarField> hRefFluid(fluidRegions.size());
+    PtrList<volScalarField> ghFluid(fluidRegions.size());
+    PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
+    PtrList<compressible::momentumTransportModel> turbulenceFluid(fluidRegions.size());
+    PtrList<rhoReactionThermophysicalTransportModel> thermophysicalTransportFluid(fluidRegions.size());
+    PtrList<CombustionModel<rhoReactionThermo>> reactionFluid(fluidRegions.size());
+    PtrList<volScalarField> p_rghFluid(fluidRegions.size());
+    PtrList<radiationModel> radiation(fluidRegions.size());
+    PtrList<volScalarField> KFluid(fluidRegions.size());
+    PtrList<volScalarField> dpdtFluid(fluidRegions.size());
+    PtrList<multivariateSurfaceInterpolationScheme<scalar>::fieldTable> fieldsFluid(fluidRegions.size());
+
+    List<scalar> initialMassFluid(fluidRegions.size());
+
+    PtrList<IOMRFZoneList> MRFfluid(fluidRegions.size());
+    PtrList<fv::options> fluidFvOptions(fluidRegions.size());
+
+// Populate fluid field pointer lists
+    forAll(fluidRegions, i) {
+      Info<< "*** Reading fluid mesh thermophysical properties for region "
+          << fluidRegions[i].name() << nl << endl;
+      Info<< "    Adding to thermoFluid\n" << endl;
+      thermoFluid.set(i, rhoReactionThermo::New(fluidRegions[i]).ptr());
+      Info<< "    Adding to rhoFluid\n" << endl;
+      rhoFluid.set (i, new volScalarField
+        (
+          IOobject("rho", runTime.timeName(), fluidRegions[i], IOobject::NO_READ, IOobject::AUTO_WRITE),
+          thermoFluid[i].rho()
+        )
+      );
+
+      Info<< "    Adding to QFluid\n" << endl;
+      QFluid.set(i, new volScalarField
+        (
+          IOobject("Q", runTime.timeName(), fluidRegions[i], IOobject::READ_IF_PRESENT, IOobject::AUTO_WRITE),
+          fluidRegions[i]
+        )
+      );
+
+    Info<< "    Adding to UFluid\n" << endl;
+    UFluid.set
+    (
+        i,
+        new volVectorField
+        (
+            IOobject
+            (
+                "U",
+                runTime.timeName(),
+                fluidRegions[i],
+                IOobject::MUST_READ,
+                IOobject::AUTO_WRITE
+            ),
+            fluidRegions[i]
+        )
+    );
+
+    Info<< "    Adding to phiFluid\n" << endl;
+    phiFluid.set
+    (
+        i,
+        new surfaceScalarField
+        (
+            IOobject
+            (
+                "phi",
+                runTime.timeName(),
+                fluidRegions[i],
+                IOobject::READ_IF_PRESENT,
+                IOobject::AUTO_WRITE
+            ),
+            linearInterpolate(rhoFluid[i]*UFluid[i])
+                & fluidRegions[i].Sf()
+        )
+    );
+
+    Info<< "    Adding to gFluid\n" << endl;
+    gFluid.set
+    (
+        i,
+        new uniformDimensionedVectorField
+        (
+            IOobject
+            (
+                "g",
+                runTime.constant(),
+                fluidRegions[i],
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE
+            )
+        )
+    );
+
+    Info<< "    Adding to hRefFluid\n" << endl;
+    hRefFluid.set
+    (
+        i,
+        new uniformDimensionedScalarField
+        (
+            IOobject
+            (
+                "hRef",
+                runTime.constant(),
+                fluidRegions[i],
+                IOobject::READ_IF_PRESENT,
+                IOobject::NO_WRITE
+            ),
+            dimensionedScalar(dimLength, 0)
+        )
+    );
+
+    dimensionedScalar ghRef(- mag(gFluid[i])*hRefFluid[i]);
+
+    Info<< "    Adding to ghFluid\n" << endl;
+    ghFluid.set
+    (
+        i,
+        new volScalarField
+        (
+            "gh",
+            (gFluid[i] & fluidRegions[i].C()) - ghRef
+        )
+    );
+
+    Info<< "    Adding to ghfFluid\n" << endl;
+    ghfFluid.set
+    (
+        i,
+        new surfaceScalarField
+        (
+            "ghf",
+            (gFluid[i] & fluidRegions[i].Cf()) - ghRef
+        )
+    );
+
+    Info<< "    Adding to turbulenceFluid\n" << endl;
+    turbulenceFluid.set
+    (
+        i,
+        compressible::momentumTransportModel::New
+        (
+            rhoFluid[i],
+            UFluid[i],
+            phiFluid[i],
+            thermoFluid[i]
+        ).ptr()
+    );
+
+    Info<< "    Adding to thermophysicalTransport\n" << endl;
+    thermophysicalTransportFluid.set
+    (
+        i,
+        rhoReactionThermophysicalTransportModel::New
+        (
+            turbulenceFluid[i],
+            thermoFluid[i]
+        ).ptr()
+    );
+
+    Info<< "    Adding to reactionFluid\n" << endl;
+    reactionFluid.set
+    (
+        i,
+        CombustionModel<rhoReactionThermo>::New
+        (
+            thermoFluid[i],
+            turbulenceFluid[i]
+        )
+    );
+
+    p_rghFluid.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                "p_rgh",
+                runTime.timeName(),
+                fluidRegions[i],
+                IOobject::MUST_READ,
+                IOobject::AUTO_WRITE
+            ),
+            fluidRegions[i]
+        )
+    );
+
+    // Force p_rgh to be consistent with p
+    p_rghFluid[i] = thermoFluid[i].p() - rhoFluid[i]*ghFluid[i];
+
+    fluidRegions[i].setFluxRequired(p_rghFluid[i].name());
+
+    Info<< "    Adding to radiationFluid\n" << endl;
+    radiation.set
+    (
+        i,
+        radiationModel::New(thermoFluid[i].T())
+    );
+
+    initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();
+
+    Info<< "    Adding to KFluid\n" << endl;
+    KFluid.set
+    (
+        i,
+        new volScalarField
+        (
+            "K",
+            0.5*magSqr(UFluid[i])
+        )
+    );
+
+    Info<< "    Adding to dpdtFluid\n" << endl;
+    dpdtFluid.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                "dpdt",
+                runTime.timeName(),
+                fluidRegions[i]
+            ),
+            fluidRegions[i],
+            dimensionedScalar
+            (
+                thermoFluid[i].p().dimensions()/dimTime,
+                0
+            )
+        )
+    );
+
+    Info<< "    Adding to fieldsFluid\n" << endl;
+    fieldsFluid.set
+    (
+        i,
+        new multivariateSurfaceInterpolationScheme<scalar>::fieldTable
+    );
+    forAll(thermoFluid[i].composition().Y(), j)
+    {
+        fieldsFluid[i].add(thermoFluid[i].composition().Y()[j]);
+    }
+    fieldsFluid[i].add(thermoFluid[i].he());
+
+    Info<< "    Adding MRF\n" << endl;
+    MRFfluid.set
+    (
+        i,
+        new IOMRFZoneList(fluidRegions[i])
+    );
+
+    Info<< "    Adding fvOptions\n" << endl;
+    fluidFvOptions.set
+    (
+        i,
+        new fv::options(fluidRegions[i])
+    );
+
+    turbulenceFluid[i].validate();
+}
+
+      #include "createSolidFields.H"
+
+
+
+//    end #include "createFields.H"
+
     #include "initContinuityErrs.H"
     pimpleMultiRegionControl pimples(fluidRegions, solidRegions);
     #include "createFluidPressureControls.H"
@@ -67,7 +385,6 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
     #include "compressibleMultiRegionCourantNo.H"
     #include "solidRegionDiffusionNo.H"
     #include "setInitialMultiRegionDeltaT.H"
-
     nelt_ = 0;
     nelgt_ = 0;
 
@@ -75,37 +392,24 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
     n_solid_regions_=solidRegions.size();
     n_total_regions_=n_fluid_regions_+n_solid_regions_;
 
-    for (int i = 0; i < n_fluid_regions_; i++)
-    {
+    for (int i = 0; i < n_fluid_regions_; i++) {
       nelgt_ = nelgt_ + fluidRegions[i].globalData().nTotalCells();
       nelt_ = nelt_ + fluidRegions[i].nCells();
     }
-    for (int i = 0; i < n_solid_regions_; i++)
-    {
+    for (int i = 0; i < n_solid_regions_; i++) {
       nelgt_ = nelgt_ + solidRegions[i].globalData().nTotalCells();
       nelt_ = nelt_ + solidRegions[i].nCells();
     }
 
     local_regions_size_.resize(n_total_regions_);
-    for (int i = 0; i <n_total_regions_; i++)
-    {
-      if (i < n_fluid_regions_)
-      {
+    for (int i = 0; i <n_total_regions_; i++) {
+      if (i < n_fluid_regions_) {
         local_regions_size_.at(i)=fluidRegions[i].nCells();
       }
-      else
-      {
+      else {
         local_regions_size_.at(i)=solidRegions[i-n_fluid_regions_].nCells();
       }
     }
-
-    init_displs();
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-}
-
-
-FoamDriver::initialize() {
 
 }
 
@@ -115,30 +419,18 @@ FoamDriver::initialize() {
 std::pair<int,int> FoamDriver::get_elem(int32_t local_elem) const
 {
   int search_num = 0;
-  int temp = 0;
 
-  int region_num;
-  int region_elem;
-
-  for (int32_t i = 0; i < n_total_regions_; i++)
-  {
-    temp = search_num + local_regions_size_.at(i);
-    if (temp < local_elem)
-    {
-      search_num=temp;
+  for (int32_t i = 0; i < n_total_regions_; i++) {
+    int region_size = local_regions_size_.at(i);
+    if (local_elem < search_num + region_size) {
+      return {i, local_elem - search_num};
     }
-    else
-    {
-      region_num=i;
-      region_elem = temp - local_elem;
-      break;
-    }
-
+    search_num += region_size;
   }
-  return {region_num, region_elem};
+  throw std::runtime_error{"Value of local element is too high"};
 }
 
-std::vector<double> FoamDriver::temperature_local() const
+std::vector<double> FoamDriver::temperature_local() const 
 {
   // Each Foam proc finds the temperatures of its local elements
   std::vector<double> local_elem_temperatures(nelt_);
@@ -224,13 +516,11 @@ Position FoamDriver::centroid_at(int32_t local_elem) const
     y = fluidRegions[region.first].C()[region.second].component(1);
     z = fluidRegions[region.first].C()[region.second].component(2);
   }
-  else {
+ else {
     x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0);
     y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1);
     z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2);
   }
-// err_chk(foam_get_local_elem_centroid(local_elem, &x, &y, &z),
-// "Could not find centroid of local element " + std::to_string(local_elem));
   return {x, y, z};
 }
 
@@ -255,8 +545,6 @@ double FoamDriver::volume_at(int32_t local_elem) const
   else {
     volume = solidRegions[region.first-n_fluid_regions_].V()[region.second];
   }
-//  err_chk(foam_get_local_elem_volume(local_elem, &volume),
-///          "Could not find volume of local element " + std::to_string(local_elem));
   return volume;
 }
 
@@ -275,12 +563,12 @@ double FoamDriver::temperature_at(int32_t local_elem) const
   double temperature;
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
-  if (region.first < n_fluid_regions_){
-    temperature = thermoFluid[region.first].T()[region.second];
-  }
-  else {
-    temperature = thermos[region.first - n_fluid_regions_].T()[region.second];
-  }
+//  if (region.first < n_fluid_regions_){
+//    temperature = thermoFluid[region.first].T()[region.second];
+//  }
+//  else {
+//    temperature = thermos[region.first - n_fluid_regions_].T()[region.second];
+//  }
 
   return temperature;
 }
@@ -291,24 +579,25 @@ int FoamDriver::in_fluid_at(int32_t local_elem) const
   //! total_regions_size
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
-  if (region.first < n_fluid_regions_){
-    return 1;
-  }
-  else {
-    return 0;
-  }
+//  if (region.first < n_fluid_regions_){
+//    return 1;
+//  }
+//  else {
+//    return 0;
+//  }
 }
 
 int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
 {
   Expects(local_elem >= 1 && local_elem <= nelt_);
   std::pair<int,int> region;
-  if (region.first < n_fluid_regions_){
-    QFluid[region.first].ref()[region.second] = heat;
-  }
-  else {
-    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
-  }
+  region = get_elem(local_elem);
+//  if (region.first < n_fluid_regions_){
+//    QFluid[region.first].ref()[region.second] = heat;
+//  }
+//  else {
+//    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
+//  }
 //  return foam_set_heat_source(local_elem, heat);
 }
 
