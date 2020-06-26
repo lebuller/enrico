@@ -28,6 +28,8 @@ public:
 
   ~FoamDriver();
 
+  void initialize();
+
   //! runs all timesteps for a heat/fluid solve in OpenFOAM
   //!
   void solve_step() final;
@@ -81,7 +83,7 @@ public:
 
   //! Converts the enrico local_element into the appropriate region and region
   //! element needed for OpenFOAM
-  std::vector<int> get_elem(int32_t local_elem);
+  std::pair<int,int> get_elem(int32_t local_elem) const;
 
   //! Get the number of local mesh elements
   //! \return Number of local mesh elements

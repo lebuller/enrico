@@ -48,7 +48,6 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
 
 // These includes and argList call replace the contents of setRootCaseLists.H
     #include "listOptions.H"
-//    args_ = new Foam::argList(argc,pargv, false, false, true, (void*)&comm);
     args_ = std::make_shared<Foam::argList> (argc, pargv, false, false, true, &comm);
     Foam::argList &args = *(args_.get());
     if (!args.checkRootCase())
@@ -96,7 +95,7 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
       }
       else
       {
-        local_regions_size_.at(i)=solidRegions[i].nCells();
+        local_regions_size_.at(i)=solidRegions[i-n_fluid_regions_].nCells();
       }
     }
 
@@ -105,7 +104,15 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-std::vector<int> FoamDriver::get_elem(int32_t local_elem)
+
+FoamDriver::initialize() {
+
+}
+
+
+
+//std::vector<int> FoamDriver::get_elem(int32_t local_elem)
+std::pair<int,int> FoamDriver::get_elem(int32_t local_elem) const
 {
   int search_num = 0;
   int temp = 0;
@@ -136,7 +143,7 @@ std::vector<double> FoamDriver::temperature_local() const
   // Each Foam proc finds the temperatures of its local elements
   std::vector<double> local_elem_temperatures(nelt_);
   for (int32_t i = 0; i < nelt_; ++i) {
-    local_elem_temperatures[i] = this->temperature_at(i + 1);
+    local_elem_temperatures[i] = this->temperature_at(i);
   }
 
   return local_elem_temperatures;
@@ -146,7 +153,7 @@ std::vector<int> FoamDriver::fluid_mask_local() const
 {
   std::vector<int> local_fluid_mask(nelt_);
   for (int32_t i = 0; i < nelt_; ++i) {
-    local_fluid_mask[i] = this->in_fluid_at(i + 1);
+    local_fluid_mask[i] = this->in_fluid_at(i);
   }
   return local_fluid_mask;
 }
@@ -156,8 +163,8 @@ std::vector<double> FoamDriver::density_local() const
   std::vector<double> local_densities(nelt_);
 
   for (int32_t i = 0; i < nelt_; ++i) {
-    if (this->in_fluid_at(i + 1) == 1) {
-      auto T = this->temperature_at(i + 1);
+    if (this->in_fluid_at(i) == 1) {
+      auto T = this->temperature_at(i);
       // nu1 returns specific volume in [m^3/kg]
       local_densities[i] = 1.0e-3 / iapws::nu1(pressure_bc_, T);
     } else {
@@ -170,14 +177,60 @@ std::vector<double> FoamDriver::density_local() const
 
 void FoamDriver::solve_step()
 {
-  //! add calls to the foam module for running x timesteps
+//   while (pimples.run(runTime)) {
+//        #include "readTimeControls.H"
+//        #include "readSolidTimeControls.H"
+//        #include "compressibleMultiRegionCourantNo.H"
+//        #include "solidRegionDiffusionNo.H"
+//        #include "setMultiRegionDeltaT.H"
+
+//        runTime++;
+
+//        Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        // --- PIMPLE loop
+//        while (pimples.loop()) {
+//            forAll(fluidRegions, i) {
+//!           for (int i = 0; i < fluidRegions.size(); ++i
+//                Info<< "\nSolving for fluid region "
+//                    << fluidRegions[i].name() << endl;
+//                #include "setRegionFluidFields.H"
+//                #include "solveFluid.H"
+//            }
+
+//            forAll(solidRegions, i) {
+//!           for (int i = 0; i < solidRegions.size(); ++i
+//                Info<< "\nSolving for solid region "
+//                    << solidRegions[i].name() << endl;
+//                #include "setRegionSolidFields.H"
+//                #include "solveSolid.H"
+//            }
+//        }
+
+//        runTime.write();
+
+//        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+//            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+//            << nl << endl;
 }
 
 Position FoamDriver::centroid_at(int32_t local_elem) const
 {
   double x, y, z;
-//  err_chk(foam_get_local_elem_centroid(local_elem, &x, &y, &z),
-//          "Could not find centroid of local element " + std::to_string(local_elem));
+  std::pair<int,int> region;
+  region = FoamDriver::get_elem(local_elem);
+  if (region.first < n_fluid_regions_) {
+    x = fluidRegions[region.first].C()[region.second].component(0);
+    y = fluidRegions[region.first].C()[region.second].component(1);
+    z = fluidRegions[region.first].C()[region.second].component(2);
+  }
+  else {
+    x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0);
+    y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1);
+    z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2);
+  }
+// err_chk(foam_get_local_elem_centroid(local_elem, &x, &y, &z),
+// "Could not find centroid of local element " + std::to_string(local_elem));
   return {x, y, z};
 }
 
@@ -186,7 +239,7 @@ std::vector<Position> FoamDriver::centroid_local() const
   int n_local = this->n_local_elem();
   std::vector<Position> local_element_centroids(n_local);
   for (int32_t i = 0; i < n_local; ++i) {
-    local_element_centroids[i] = this->centroid_at(i + 1);
+    local_element_centroids[i] = this->centroid_at(i);
   }
   return local_element_centroids;
 }
@@ -194,6 +247,14 @@ std::vector<Position> FoamDriver::centroid_local() const
 double FoamDriver::volume_at(int32_t local_elem) const
 {
   double volume;
+  std::pair<int,int> region;
+  region = FoamDriver::get_elem(local_elem);
+  if (region.first < n_fluid_regions_) {
+    volume = fluidRegions[region.first].V()[region.second];
+  }
+  else {
+    volume = solidRegions[region.first-n_fluid_regions_].V()[region.second];
+  }
 //  err_chk(foam_get_local_elem_volume(local_elem, &volume),
 ///          "Could not find volume of local element " + std::to_string(local_elem));
   return volume;
@@ -204,7 +265,7 @@ std::vector<double> FoamDriver::volume_local() const
   int n_local = this->n_local_elem();
   std::vector<double> local_elem_volumes(n_local);
   for (int32_t i = 0; i < n_local; ++i) {
-    local_elem_volumes[i] = this->volume_at(i + 1);
+    local_elem_volumes[i] = this->volume_at(i);
   }
   return local_elem_volumes;
 }
@@ -212,21 +273,42 @@ std::vector<double> FoamDriver::volume_local() const
 double FoamDriver::temperature_at(int32_t local_elem) const
 {
   double temperature;
-//  err_chk(foam_get_local_elem_temperature(local_elem, &temperature),
-//          "Could not find temperature of local element " + std::to_string(local_elem));
+  std::pair<int,int> region;
+  region = FoamDriver::get_elem(local_elem);
+  if (region.first < n_fluid_regions_){
+    temperature = thermoFluid[region.first].T()[region.second];
+  }
+  else {
+    temperature = thermos[region.first - n_fluid_regions_].T()[region.second];
+  }
+
   return temperature;
 }
 
 int FoamDriver::in_fluid_at(int32_t local_elem) const
 {
-  //! This can potentially be (May need to be) wrapped into the init portion that gets
-  //! number of elements locally and globally (which also need to be different than Nek)
-//  return foam_local_elem_is_in_fluid(local_elem);
+  //! may can make this more efficient by using n_fluid_regions_ and
+  //! total_regions_size
+  std::pair<int,int> region;
+  region = FoamDriver::get_elem(local_elem);
+  if (region.first < n_fluid_regions_){
+    return 1;
+  }
+  else {
+    return 0;
+  }
 }
 
 int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
 {
   Expects(local_elem >= 1 && local_elem <= nelt_);
+  std::pair<int,int> region;
+  if (region.first < n_fluid_regions_){
+    QFluid[region.first].ref()[region.second] = heat;
+  }
+  else {
+    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
+  }
 //  return foam_set_heat_source(local_elem, heat);
 }
 
