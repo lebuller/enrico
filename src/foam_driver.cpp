@@ -521,12 +521,16 @@ forAll(solidRegions, i)
     }
 
     local_regions_size_.resize(n_total_regions_);
-    for (int i = 0; i <n_total_regions_; i++) {
+    for (int i = 0; i < n_total_regions_; i++) {
       if (i < n_fluid_regions_) {
         local_regions_size_.at(i)=fluidRegions[i].nCells();
       } else {
         local_regions_size_.at(i)=solidRegions[i-n_fluid_regions_].nCells();
       }
+    }
+
+    for (int i=0; i < n_solid_regions_; i++) {
+      Pout <<  "volume check " << solidRegions[i].V()[0] << endl;
     }
 
 }
@@ -587,6 +591,7 @@ std::vector<double> FoamDriver::density_local() const
 
 void FoamDriver::solve_step()
 {
+  throw std::runtime_error{ "OpenFOAM solve_step not fully implemented" };
 //   while (pimples.run(runTime)) {
 //        #include "readTimeControls.H"
 //        #include "readSolidTimeControls.H"
@@ -630,13 +635,13 @@ Position FoamDriver::centroid_at(int32_t local_elem) const
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
   if (region.first < n_fluid_regions_) {
-    x = fluidRegions[region.first].C()[region.second].component(0);
-    y = fluidRegions[region.first].C()[region.second].component(1);
-    z = fluidRegions[region.first].C()[region.second].component(2);
+    x = fluidRegions[region.first].C()[region.second].component(0)*100;
+    y = fluidRegions[region.first].C()[region.second].component(1)*100;
+    z = fluidRegions[region.first].C()[region.second].component(2)*100;
   } else {
-    x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0);
-    y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1);
-    z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2);
+    x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0)*100;
+    y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1)*100;
+    z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2)*100;
   }
   return {x, y, z};
 }
@@ -657,9 +662,15 @@ double FoamDriver::volume_at(int32_t local_elem) const
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
   if (region.first < n_fluid_regions_) {
-    volume = fluidRegions[region.first].V()[region.second];
+    volume = fluidRegions[region.first].V()[region.second]*pow(100,3);
   } else {
-    volume = solidRegions[region.first-n_fluid_regions_].V()[region.second];
+    Pout << "proc " << Pstream::myProcNo() << " region "
+         << region.first << " element " << region.second << endl;
+    Pout << "solid " << region.first-n_fluid_regions_
+         << " " << solidRegions[0].C()[0].component(0) << endl;
+    Pout << "solid " << region.first-n_fluid_regions_
+         << " " << solidRegions[0].V()[0] << endl;
+    volume = solidRegions[region.first-n_fluid_regions_].V()[region.second]*pow(100,3);
   }
   return volume;
 }
