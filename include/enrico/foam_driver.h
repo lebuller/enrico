@@ -136,6 +136,9 @@ private:
   int32_t n_solid_regions_; //!< number of solid regions in the foam mesh
   int32_t n_total_regions_; //!< number of total regions in the foam mesh
 
+  double m_to_cm = 100;
+  double m3_to_cm3 = pow(100,3);
+
   std::vector<int> local_regions_size_; //! # of elements in each region of the local process
 
   std::shared_ptr<Foam::argList> args_;

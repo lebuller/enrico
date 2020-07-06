@@ -43,11 +43,23 @@ FoamDriver::FoamDriver(MPI_Comm comm, pugi::xml_node node)
 
 void FoamDriver::initialize(MPI_Comm comm) {
 
+    int foam_np;
+    MPI_Comm_size(comm, &foam_np);
     int argc=2;
     char *argv[1];
-    std::string parallel_arg = "-parallel";
-    argv[0]=const_cast<char*>( parallel_arg.c_str());
-    char** pargv =argv;
+    char** pargv;
+    std::string parallel_arg;
+
+    if (foam_np > 1) {
+      parallel_arg = "-parallel";
+      argv[0]=const_cast<char*>( parallel_arg.c_str());
+      pargv =argv;
+    }
+    else if (foam_np <= 1) {
+      argc=1;
+      argv[0]=const_cast<char*>( parallel_arg.c_str());
+      pargv =argv;
+    }
 
     #define NO_CONTROL
     #define CREATE_MESH createMeshesPostProcess.H
@@ -635,13 +647,13 @@ Position FoamDriver::centroid_at(int32_t local_elem) const
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
   if (region.first < n_fluid_regions_) {
-    x = fluidRegions[region.first].C()[region.second].component(0)*100;
-    y = fluidRegions[region.first].C()[region.second].component(1)*100;
-    z = fluidRegions[region.first].C()[region.second].component(2)*100;
+    x = fluidRegions[region.first].C()[region.second].component(0)*m_to_cm;
+    y = fluidRegions[region.first].C()[region.second].component(1)*m_to_cm;
+    z = fluidRegions[region.first].C()[region.second].component(2)*m_to_cm;
   } else {
-    x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0)*100;
-    y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1)*100;
-    z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2)*100;
+    x = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(0)*m_to_cm;
+    y = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(1)*m_to_cm;
+    z = solidRegions[region.first-n_fluid_regions_].C()[region.second].component(2)*m_to_cm;
   }
   return {x, y, z};
 }
@@ -662,15 +674,15 @@ double FoamDriver::volume_at(int32_t local_elem) const
   std::pair<int,int> region;
   region = FoamDriver::get_elem(local_elem);
   if (region.first < n_fluid_regions_) {
-    volume = fluidRegions[region.first].V()[region.second]*pow(100,3);
+    volume = fluidRegions[region.first].V()[region.second]*m3_to_cm3;
   } else {
-    Pout << "proc " << Pstream::myProcNo() << " region "
-         << region.first << " element " << region.second << endl;
-    Pout << "solid " << region.first-n_fluid_regions_
-         << " " << solidRegions[0].C()[0].component(0) << endl;
-    Pout << "solid " << region.first-n_fluid_regions_
-         << " " << solidRegions[0].V()[0] << endl;
-    volume = solidRegions[region.first-n_fluid_regions_].V()[region.second]*pow(100,3);
+//    Pout << "proc " << Pstream::myProcNo() << " region "
+//         << region.first << " element " << region.second << endl;
+//    Pout << "solid " << region.first-n_fluid_regions_
+//         << " " << solidRegions[0].C()[0].component(0) << endl;
+//    Pout << "solid " << region.first-n_fluid_regions_
+//         << " " << solidRegions[0].V()[0] << endl;
+    volume = solidRegions[region.first-n_fluid_regions_].V()[region.second]*m3_to_cm3;
   }
   return volume;
 }
@@ -718,7 +730,7 @@ int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
   std::pair<int,int> region;
   region = get_elem(local_elem);
   if (region.first < n_fluid_regions_){
-    QFluid[region.first].ref()[region.second] = heat;
+    QFluid[region.first].ref()[region.second] = heat*m3_to_cm3;
   } else {
     Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
   }
