@@ -141,8 +141,11 @@ private:
 
   std::vector<int> local_regions_size_; //! # of elements in each region of the local process
 
+  //! shared pointer for the args variable in openfoam
   std::shared_ptr<Foam::argList> args_;
 
+  //! defines openfoam time object
+  std::shared_ptr<Foam::Time> runTime_;
 
   //! defines openfoam mesh objects
   Foam::PtrList<Foam::fvMesh> solidRegions;
@@ -179,7 +182,23 @@ private:
   Foam::PtrList<volScalarField> Qsolid;
   Foam::PtrList<volSymmTensorField> aniAlphas;
 
+  //! define initial continuity errors for fluid
+  Foam::List<scalar> cumulativeContErrs;
 
+  //! define multiRegion control for openfoam meshes
+  std::shared_ptr<Foam::pimpleMultiRegionControl> pimples_;
+
+  //! define openfoam fluid pressure controls
+  Foam::PtrList<pressureControl> pressureControlFluid;
+
+  //! define openfoam time controls
+//  std::shared_ptr<bool> adjustTimeStep_;
+//  std::shared_ptr<scalar> maxCo_;
+//  std::shared_ptr<scalar> maxDeltaT_;
+
+  bool adjustTimeStep;
+  scalar maxCo;
+  scalar maxDeltaT;
 
 };
 

@@ -72,7 +72,12 @@ void FoamDriver::initialize(MPI_Comm comm) {
     }
     #include "listOutput.H"
 
-    #include "createTime.H"
+//    #include "createTime.H"
+    Foam::Info<< "Create time\n" << Foam::endl;
+    runTime_ = std::make_shared<Foam::Time> (Foam::Time::controlDictName, args);
+    Foam::Time &runTime = *(runTime_.get());
+
+//  end include "createTime.H"
 
 //    #include "createMeshes.H"
     regionProperties rp(runTime);
@@ -508,10 +513,43 @@ forAll(solidRegions, i)
 
 //    end #include "createFields.H"
 
-    #include "initContinuityErrs.H"
-    pimpleMultiRegionControl pimples(fluidRegions, solidRegions);
-    #include "createFluidPressureControls.H"
-    #include "createTimeControls.H"
+//    #include "initContinuityErrs.H"
+    cumulativeContErrs.resize(fluidRegions.size());
+    cumulativeContErrs=0.0;
+
+//    end include "initContinuityErrs.H"
+
+    pimples_ = std::make_shared<Foam::pimpleMultiRegionControl> (fluidRegions, solidRegions);
+    pimpleMultiRegionControl &pimples = *(pimples_.get());
+
+//    #include "createFluidPressureControls.H"
+    pressureControlFluid.setSize(fluidRegions.size());
+
+    forAll(fluidRegions, i)
+    {
+      pressureControlFluid.set
+      (
+        i,
+        new pressureControl
+        (
+          p_rghFluid[i],
+          rhoFluid[i],
+          pimples.pimple(i).dict(),
+          false
+        )
+      );
+   }
+//    end include "createFluidPressureControls.H"
+
+
+//    #include "createTimeControls.H"
+    adjustTimeStep = runTime.controlDict().lookupOrDefault("adjustTimeStep", false);
+
+    maxCo = runTime.controlDict().lookupOrDefault<scalar>("maxCo", 1.0);
+
+    maxDeltaT = runTime.controlDict().lookupOrDefault<scalar>("maxDeltaT", great);
+//    end include "createTimeControls.H"
+
     #include "readSolidTimeControls.H"
     #include "compressibleMultiRegionCourantNo.H"
     #include "solidRegionDiffusionNo.H"
@@ -603,42 +641,50 @@ std::vector<double> FoamDriver::density_local() const
 
 void FoamDriver::solve_step()
 {
-  throw std::runtime_error{ "OpenFOAM solve_step not fully implemented" };
-//   while (pimples.run(runTime)) {
-//        #include "readTimeControls.H"
-//        #include "readSolidTimeControls.H"
-//        #include "compressibleMultiRegionCourantNo.H"
-//        #include "solidRegionDiffusionNo.H"
-//        #include "setMultiRegionDeltaT.H"
+  Foam::argList &args = *(args_.get());
+  Foam::Time &runTime = *(runTime_.get());
+  Foam::pimpleMultiRegionControl &pimples = *(pimples_.get());
+  int i;
+  int j;
 
-//        runTime++;
+  for(j = 0; j < 50; j++) {
+  #include "readTimeControls.H"
+  #include "readSolidTimeControls.H"
+  #include "compressibleMultiRegionCourantNo.H"
+  #include "solidRegionDiffusionNo.H"
+  #include "setMultiRegionDeltaT.H"
 
-//        Info<< "Time = " << runTime.timeName() << nl << endl;
+  runTime++;
 
-        // --- PIMPLE loop
-//        while (pimples.loop()) {
+  Info<< "Time = " << runTime.timeName() << nl << endl;
+
+  // --- PIMPLE loop
+  while (pimples.loop()) {
 //            forAll(fluidRegions, i) {
-//!           for (int i = 0; i < fluidRegions.size(); ++i
-//                Info<< "\nSolving for fluid region "
-//                    << fluidRegions[i].name() << endl;
-//                #include "setRegionFluidFields.H"
-//                #include "solveFluid.H"
-//            }
+    for (i = 0; i < fluidRegions.size(); ++i) {
+      Info<< "\nSolving for fluid region "
+          << fluidRegions[i].name() << endl;
+      #include "setRegionFluidFields.H"
+      #include "solveFluid.H"
+    }
 
 //            forAll(solidRegions, i) {
-//!           for (int i = 0; i < solidRegions.size(); ++i
-//                Info<< "\nSolving for solid region "
-//                    << solidRegions[i].name() << endl;
-//                #include "setRegionSolidFields.H"
-//                #include "solveSolid.H"
-//            }
-//        }
+    for (i = 0; i < solidRegions.size(); ++i) {
+      Info<< "\nSolving for solid region "
+          << solidRegions[i].name() << endl;
+      #include "setRegionSolidFields.H"
+      #include "solveSolid.H"
+    }
+  }
 
-//        runTime.write();
+  runTime.write();
 
-//        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
-//            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-//            << nl << endl;
+  Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+      << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+      << nl << endl;
+
+//  throw std::runtime_error{ "OpenFOAM solve_step not fully implemented" };
+  }
 }
 
 Position FoamDriver::centroid_at(int32_t local_elem) const
@@ -676,12 +722,6 @@ double FoamDriver::volume_at(int32_t local_elem) const
   if (region.first < n_fluid_regions_) {
     volume = fluidRegions[region.first].V()[region.second]*m3_to_cm3;
   } else {
-//    Pout << "proc " << Pstream::myProcNo() << " region "
-//         << region.first << " element " << region.second << endl;
-//    Pout << "solid " << region.first-n_fluid_regions_
-//         << " " << solidRegions[0].C()[0].component(0) << endl;
-//    Pout << "solid " << region.first-n_fluid_regions_
-//         << " " << solidRegions[0].V()[0] << endl;
     volume = solidRegions[region.first-n_fluid_regions_].V()[region.second]*m3_to_cm3;
   }
   return volume;
@@ -693,6 +733,10 @@ std::vector<double> FoamDriver::volume_local() const
   std::vector<double> local_elem_volumes(n_local);
   for (int32_t i = 0; i < n_local; ++i) {
     local_elem_volumes[i] = this->volume_at(i);
+    if(local_elem_volumes[i] == 0) {
+      Pout << "On process " << Pstream::myProcNo() << " cell" << i 
+           << "has no volume" << endl;
+    }
   }
   return local_elem_volumes;
 }
@@ -728,13 +772,14 @@ int FoamDriver::set_heat_source_at(int32_t local_elem, double heat)
 {
   Expects(local_elem >= 1 && local_elem <= nelt_);
   std::pair<int,int> region;
-  region = get_elem(local_elem);
+  region = get_elem(local_elem-1);
   if (region.first < n_fluid_regions_){
     QFluid[region.first].ref()[region.second] = heat*m3_to_cm3;
   } else {
-    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat;
+    Qsolid[region.first - n_fluid_regions_].ref()[region.second] = heat*m3_to_cm3;
   }
 //  return foam_set_heat_source(local_elem, heat);
+  return 0;
 }
 
 FoamDriver::~FoamDriver()

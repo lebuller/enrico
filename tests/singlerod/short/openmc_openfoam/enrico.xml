@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<enrico>
+  <neutronics>
+    <driver>openmc</driver>
+    <procs_per_node>1</procs_per_node>
+  </neutronics>
+  <heat_fluids>
+    <driver>openfoam</driver>
+    <pressure_bc>12.7553</pressure_bc>
+  </heat_fluids>
+  <coupling>
+    <communication>overlapping</communication>
+    <power>820.0</power>
+    <max_timesteps>1</max_timesteps>
+    <max_picard_iter>20</max_picard_iter>
+  </coupling>
+</enrico>
