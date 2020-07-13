@@ -6,14 +6,17 @@
 cp -r 0.orig ./0/
 
 runApplication -s fuel gmshToFoam -region fuel singlerod_short_fuel
+runApplication -s gap gmshToFoam -region clad singlerod_short_gap
 runApplication -s clad gmshToFoam -region clad singlerod_short_clad
 runApplication -s moderator gmshToFoam -region moderator singlerod_short_mod
 
 cp constant/fuel/fuel_boundary constant/fuel/polyMesh/boundary
+cp constant/gap/gap_boundary constant/gap/polyMesh/boundary
 cp constant/clad/clad_boundary constant/clad/polyMesh/boundary
 cp constant/moderator/mod_boundary constant/moderator/polyMesh/boundary
 
 runApplication -s fuel decomposePar -region fuel
+runApplication -s gap decomposePar -region gap
 runApplication -s clad decomposePar -region clad
 runApplication -s moderator decomposePar -region moderator
 

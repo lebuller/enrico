@@ -18,7 +18,7 @@ FoamFile
 regions
 (
     fluid   (moderator)
-    solid   (clad fuel)
+    solid   (clad gap fuel)
 );
 
 // ************************************************************************* //

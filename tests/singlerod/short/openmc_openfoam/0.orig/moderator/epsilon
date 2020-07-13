@@ -17,14 +17,15 @@ FoamFile
 
 dimensions      [0 2 -3 0 0 0 0];
 
-internalField   uniform 0.165340557637;
+//internalField   uniform 0.165340557637;
+internalField   uniform 0.003340557637;
 
 boundaryField
 {
     modInlet
     {
         type            turbulentMixingLengthDissipationRateInlet;
-        mixingLength    0.001;       // 0.5m - half channel height
+        mixingLength    0.0005;       // 0.5m - half channel height
         value           $internalField;
     }
     modOutlet

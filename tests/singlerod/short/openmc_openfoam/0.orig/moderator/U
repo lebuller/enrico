@@ -16,14 +16,14 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 4.304);
+internalField   uniform (0 0 0.500);
 
 boundaryField
 {
     modInlet
     {
         type           fixedValue;
-        value          uniform (0 0 4.304);
+        value          uniform (0 0 0.500);
     }
     modOutlet
     {

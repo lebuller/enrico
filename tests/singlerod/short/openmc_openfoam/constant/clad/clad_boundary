@@ -21,22 +21,22 @@ FoamFile
     {
         type            wall;
         ingroups        1(wall);
-        nFaces          824;
-        startFace       96576;
+        nFaces          364;
+        startFace       82036;
     }
     cladTop
     {
         type            wall;
         ingroups        1(wall);
-        nFaces          824;
-        startFace       97400;
+        nFaces          364;
+        startFace       82400;
     }
     cladOuter
     {
         type            mappedWall;
         ingroups        1(wall);
-        nFaces          6000;
-        startFace       98224;
+        nFaces          9200;
+        startFace       82764;
         sampleMode      nearestPatchFace;
         sampleRegion    moderator;
         samplePatch     modInner;
@@ -45,11 +45,11 @@ FoamFile
     {
         type            mappedWall;
         ingroups        1(wall);
-        nFaces          5200;
-        startFace       104224;
+        nFaces          8000;
+        startFace       91964;
         sampleMode      nearestPatchFace;
-        sampleRegion    fuel;
-        samplePatch     fuelOuter;
+        sampleRegion    gap;
+        samplePatch     gapOuter;
     }
 )
 

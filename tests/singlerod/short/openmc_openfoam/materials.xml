@@ -1,5 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <materials>
+  <material id="1" name="gap air" volume="0.005152212">
+    <density units="g/cm3" value="1.225E-3"/>
+    <nuclide ao="0.8" name="N14"/>
+    <nuclide ao="0.2" name="O16"/>
+  </material>
   <material id="2" name="M5" volume="0.04259135700288022">
     <density units="g/cm3" value="6.494" />
     <nuclide ao="0.508660425" name="Zr90" />
