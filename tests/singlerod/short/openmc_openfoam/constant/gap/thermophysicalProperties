@@ -34,7 +34,7 @@ mixture
 
     transport
     {
-        kappaCoeffs<8>   (0.001 0 0 0 0 0 0 0);
+        kappaCoeffs<8>   (0.01 0 0 0 0 0 0 0);
 //        kappaCoeffs<8>   (0.45427 0 0 0 0 0 0 0);
     }
 
