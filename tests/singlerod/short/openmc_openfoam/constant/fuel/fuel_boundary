@@ -38,8 +38,8 @@ FoamFile
         nFaces          10400;
         startFace       589168;
         sampleMode      nearestPatchFace;
-        sampleRegion    clad;
-        samplePatch     cladInner;
+        sampleRegion    gap;
+        samplePatch     gapInner;
     }
 )
 

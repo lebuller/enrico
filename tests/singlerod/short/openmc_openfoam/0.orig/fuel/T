@@ -17,31 +17,31 @@ FoamFile
 
 dimensions      [ 0 0 0 1 0 0 0 ];
 
-internalField   uniform 565;
+internalField   uniform 523.15;
 
 boundaryField
 {
     fuelBottom
     {
         type            zeroGradient;;
-        value           uniform 565;
+        value           $internalField;
     }
     fuelUpper
     {
         type            zeroGradient;
-        value           uniform 565;
+        value           $internalField;
     }
     minY_fuel
     {
         type            zeroGradient;
-        value           uniform 565;
+        value           $internalField;
 //        type            fixedValue;
 //        value           uniform 700;
     }
     fuelOuter
     {
         type            compressible::turbulentTemperatureCoupledBaffleMixed;
-        value           uniform 565;
+        value           $internalField;
         Tnbr            T;
         kappaMethod     solidThermo;
     }

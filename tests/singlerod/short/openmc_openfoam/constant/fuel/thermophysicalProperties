@@ -34,7 +34,7 @@ mixture
 
     transport
     {
-        kappaCoeffs<8>   (10.645 -0.010049 3.3400e-6 0 0 0 0 0);
+        kappaCoeffs<8>   (10.4183 -0.0112781 4.28013e-6 0 0 0 0 0);
     }
 
     thermodynamics

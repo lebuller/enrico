@@ -36,18 +36,18 @@ mixture
     }
     equationOfState
     {
-        rhoCoeffs<8>    (742.43  0 0 0 0 0 0 0);
+        rhoCoeffs<8>    (757.621  0 0 0 0 0 0 0);
     }
     thermodynamics
     {
         Hf              0;
         Sf              0;
-        CpCoeffs<8>     (5282  0 0 0 0 0 0 0 );
+        CpCoeffs<8>     (5172.38 0 0 0 0 0 0 0 );
     }
     transport
     {
-        muCoeffs<8>     ( 9.16438E-05  0 0 0 0 0 0 0 );
-        kappaCoeffs<8>  ( 0.6105730 0 0 0 0 0 0 0 );
+        muCoeffs<8>     ( 9.50015E-05  0 0 0 0 0 0 0 );
+        kappaCoeffs<8>  ( 0.589136 0 0 0 0 0 0 0 );
     }
 }
 

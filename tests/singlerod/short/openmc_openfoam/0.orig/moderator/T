@@ -24,27 +24,26 @@ boundaryField
     modInlet
     {
         type            fixedValue;
-        value           uniform 523.15;
+        value           $internalField;
     }
     modOutlet
     {
-        type            zeroGradient;
-//        type            inletOutlet;
-        value           uniform 523.15;
-//        inletValue      uniform 523.15;
+        type            inletOutlet;
+        value           $internalField;
+        inletValue      $internalField;
     }
     modInner
     {
         type            compressible::turbulentTemperatureCoupledBaffleMixed;
 //        type            fixedValue;
-        value           uniform 600;
+        value           $internalField;
         Tnbr            T;
-        kappaMethod     fluidThermo;
+        kappaMethod     solidThermo;
     }
     modOuter
     {
         type            zeroGradient;
-        value           uniform 523.15;
+        value           $internalField;
     }
 }
 

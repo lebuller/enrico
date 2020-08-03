@@ -17,32 +17,32 @@ FoamFile
 
 dimensions      [ 0 0 0 1 0 0 0 ];
 
-internalField   uniform 565;
+internalField   uniform 523.15;
 
 boundaryField
 {
     cladBottom
     {
         type            zeroGradient;
-        value           uniform 565;
+        value           $internalField;
     }
     cladTop
     {
         type            zeroGradient;
-        value           uniform 565;
-        inletValue      uniform 565;
+        value           $internalField;
+        inletValue      $internalField;
     }
     cladOuter
     {
         type            compressible::turbulentTemperatureCoupledBaffleMixed;
-        value           uniform 565;
+        value           $internalField;
         Tnbr            T;
-        kappaMethod     solidThermo;
+        kappaMethod     fluidThermo;
     }
     cladInner
     {
         type            compressible::turbulentTemperatureCoupledBaffleMixed;
-        value           uniform 565;
+        value           $internalField;
         Tnbr            T;
         kappaMethod     solidThermo;
     }
